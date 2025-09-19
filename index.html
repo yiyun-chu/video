@@ -62,7 +62,7 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 </div>
 </div>
 <div id="screen-verifying" class="card hidden">
-  <h2>Verifying your ID…</h2>
+  <h2>Verifying your Andrew ID…</h2>
   <p class="muted">Please wait a moment while we check your eligibility. This can take up to 10 seconds.</p>
   <div style="background:#eee;border-radius:8px;overflow:hidden;margin-top:16px;">
     <div id="verify-progress" style="height:14px;width:0;background:#1f6feb;transition:width 0.3s ease;"></div>
@@ -108,16 +108,14 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 <div id="log-container" class="hidden">
     <h3>Event Log</h3>
     <div id="event-log"></div>
-    
-    <!-- ADD THE CODE BELOW -->
     <div style="height:1px; background:#ddd; margin: 8px 0;"></div>
     <strong>Watched Intervals:</strong>
     <div id="intervals-display" style="font-family: monospace; padding-top: 4px;">
         [No intervals recorded yet]
     </div>
-    <!-- END OF ADDED CODE -->
 </div>
 <script>
+
 /*** === CONFIG === ***/
 const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbxCtc4CThJmqWlzGZEo1Q64itXVKmBSZcy5Xpkpso7eKQZJdR167yUjfAb99fLlPkAp/exec'; //(replay + random)
 const MAX_VIDEO_MINUTES = 20;
@@ -551,7 +549,7 @@ document.getElementById('fullscreen-btn').addEventListener('click', async () => 
   try {
     await document.documentElement.requestFullscreen();
     show('screen-id');
-    enterPage('check-prolific-id');
+    enterPage('check-andrew-id');
   } catch (err) {
     alert("Please allow fullscreen mode to continue.");
   }
@@ -617,14 +615,14 @@ document.getElementById('to-pre').addEventListener('click', async () => {
     console.error("Status check failed:", err);
     alert("Could not verify your ID, please try again.");
     show('screen-id');
-    enterPage('check-prolific-id');
+    enterPage('check-andrew-id');
   }
 });
 
 document.getElementById('back-2').addEventListener('click', () => {
 if (!hasNavigatedForward) {
 show('screen-id');
-enterPage('check-prolific-id');
+enterPage('check-andrew-id');
 }
 });
 
