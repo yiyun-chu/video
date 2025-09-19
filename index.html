@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AB Testing</title>
+<style>
+:root { --w: 820px; --gap: 18px; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#fafafa; color:#111; }
+.wrap { max-width: var(--w); margin: 40px auto; padding: 0 16px; }
+.card { background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.06); padding:28px; }
+h1,h2 { margin:0 0 12px; }
+.btnrow { display:flex; gap:12px; margin-top:22px; }
+button { border:0; padding:12px 16px; border-radius:10px; cursor:pointer; background:#1f6feb; color:#fff; font-weight:600; }
+button.secondary { background:#e9eef7; color:#163a76; }
+button:disabled { background:#ccc; color:#666; cursor:not-allowed; }
+.hidden { display:none; }
+.quiz-item { margin:14px 0 18px; padding:14px; border-radius:12px; background:#f8fafc; }
+.vid { width:100%; max-width:var(--w); aspect-ratio:16/9; background:#000; border-radius:12px; }
+.input { display: block; width:100%; max-width: 100%; box-sizing: border-box; padding:12px 14px; border-radius:10px; border:1px solid #d0d7de; font-size:16px; }
+.muted { color:#555; font-size:14px; }
+.hr { height:1px; background:#eee; margin:16px 0; }
+.list { margin:0; padding-left:1.2rem; }
+#log-container {
+position: fixed;
+bottom: 10px;
+right: 10px;
+width: 400px;
+max-height: 200px;
+overflow-y: auto;
+background: rgba(255, 255, 255, 0.9);
+padding: 10px;
+border-radius: 8px;
+box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+font-size: 12px;
+z-index: 1000;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<!-- Your existing HTML content remains the same -->
+<div id="screen-intro" class="card">
+<h1>Welcome to the A/B Testing, Design, and Analysis course!</h1>
+<p>There are videos here for you to watch. Check it out.</p>
+<ul class="list">
+<li>Rule: Please complete all answers on your own. AI tools are not allowed.</li>
+<li>Here is the video that cover XYZ topic.</li>
+</ul>
+<div class="btnrow">
+  <button id="fullscreen-btn">Enter Fullscreen to Continue</button>
+</div>
+<p class="muted">⚠️ <strong>You must stay in fullscreen during the session. Exiting fullscreen will end the study immediately</strong>. <br>
+Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt</span>.</p>
+</div>
+<div id="screen-id" class="card hidden">
+<h2>Please input your Andrew ID</h2>
+<input id="participant-id" class="input" placeholder="paste your Andrew ID" />
+<div class="btnrow">
+<button class="secondary" id="back-1">← Back</button>
+<button id="to-pre">→ Continue</button>
+</div>
+</div>
+<div id="screen-verifying" class="card hidden">
+  <h2>Verifying your ID…</h2>
+  <p class="muted">Please wait a moment while we check your eligibility. This can take up to 10 seconds.</p>
+  <div style="background:#eee;border-radius:8px;overflow:hidden;margin-top:16px;">
+    <div id="verify-progress" style="height:14px;width:0;background:#1f6feb;transition:width 0.3s ease;"></div>
+  </div>
+</div>
+<div id="screen-blocked" class="card hidden">
+  <h2>Access denied</h2>
+  <p class="muted">⚠️ You have already completed this activity. Only one attempt is allowed.</p>
+</div>
+<div id="screen-pre" class="card hidden">
+<h2>Pre-quiz</h2>
+<p class="muted">Answer a few questions before the video.</p>
+<div id="pre-quiz"></div>
+<div class="btnrow">
+<button class="secondary" id="back-2">← Back</button>
+<button id="to-video">→ Watch video</button>
+</div>
+</div>
+<div id="screen-video" class="card hidden">
+<h2>Video</h2>
+<p class="muted">You can fast-forward/rewind. We record interactions (play, pause, jumps).</p>
+<video id="lecture" class="vid" controls controlsList="nodownload" preload="metadata">
+<source src="https://www.dropbox.com/scl/fi/4l6yt4f4ig7c5hrbmpjya/PSY101-Conditioning-and-Learning.mp4?rlkey=uxn2puqpwy6fkgy41r21tn2cj&raw=1" type="video/mp4">
+</video>
+<div class="btnrow">
+<button id="to-post">→ Continue to post-quiz</button>
+</div>
+</div>
+<div id="screen-post" class="card hidden">
+<h2>Post-quiz</h2>
+<p class="muted">Questions to test yourself. Answers and interaction logs are recorded.</p>
+<div id="post-quiz"></div>
+<div class="btnrow">
+<button class="secondary" id="back-4">← Back</button>
+<button id="to-finish">→ Finish</button>
+</div>
+</div>
+<div id="screen-done" class="card hidden">
+<h2>Thank you!</h2>
+<p>Your response has been recorded.</p>
+</div>
+</div>
+<div id="log-container" class="hidden">
+    <h3>Event Log</h3>
+    <div id="event-log"></div>
+    
+    <!-- ADD THE CODE BELOW -->
+    <div style="height:1px; background:#ddd; margin: 8px 0;"></div>
+    <strong>Watched Intervals:</strong>
+    <div id="intervals-display" style="font-family: monospace; padding-top: 4px;">
+        [No intervals recorded yet]
+    </div>
+    <!-- END OF ADDED CODE -->
+</div>
+<script>
+/*** === CONFIG === ***/
+// const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbyCVvnZtlz9hDq0H9EZZSIQGV0lqIGd75Wy3ibt3dTAzu2b8EJCuKClIPhTFVAifd72/exec'; //version 5 (replay + event)
+const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbxCtc4CThJmqWlzGZEo1Q64itXVKmBSZcy5Xpkpso7eKQZJdR167yUjfAb99fLlPkAp/exec'; //version 6 (replay + random)
+const MAX_VIDEO_MINUTES = 20;
+
+/*** === STATE & UTIL === ***/
+const sessionId = crypto.randomUUID();
+let participantId = '';
+let treatmentGroup = -1; // -1: unassigned, 0: control, 1: treatment
+let page = 'intro';
+let sessionStartTime = Date.now(); // Track overall session start time
+let eventCounter = 0; //
+let eventQueue = []; // Queue to hold events
+let batchTimer = null; // Timer for sending batches
+let isAltVideo = false;
+let isExitingForPrompt = false;
+
+const BATCH_INTERVAL = 3000; // Send events every 3 seconds
+const MAX_QUEUE_SIZE = 20; // Or when 20 events have collected
+
+// Function to format time with 2 decimal places
+function fmt(t) { return Number(t || 0).toFixed(2); }
+
+// Add a log to the visible log container
+function addToLog(message) {
+const logContainer = document.getElementById('event-log');
+const logEntry = document.createElement('div');
+logEntry.textContent = message;
+logContainer.appendChild(logEntry);
+logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+// Add video parts
+const parts = [
+  { partNumber: 1, topic: "Introduction", start: 0,   end: 180,   accepted: false, altSrc: "https://www.dropbox.com/scl/fi/pc3ws56rqc0mglit2uvkg/RCII-U5-S2.mp4?rlkey=22axv1dg8getivo9ke3zizxsx&st=5q52eoqv&raw=1" },
+  { partNumber: 2, topic: "Why Matters?", start: 181,  end: 720,  accepted: false, altSrc: "https://www.dropbox.com/scl/fi/qxefp6rba6w664vdyvsga/RCII-U7-S1.mp4?rlkey=7vldsfpdlja0e7vqoazwjfzy1&raw=1" },
+  { partNumber: 3, topic: "Core Concepts", start: 721, end: 1800,  accepted: false, altSrc: "https://www.dropbox.com/scl/fi/62h7npfuualeoi0kia1vz/RCII-U4-S3.mp4?rlkey=rfavu6e58l5kt2lnu6pfgik4v&st=yhzk8z3c&raw=1" },
+  { partNumber: 4, topic: "Conclusion", start: 1801, end: Infinity, accepted: false, altSrc: "https://www.dropbox.com/scl/fi/1jryc87it4jvwmpbzxptp/RCII-U1-S3.mp4?rlkey=70dmcyj8ng5xp65nfj8i3xyc9&st=8e1zb6od&raw=1" },
+];
+
+function getPart(t) { return parts.find(p => t >= p.start && t <= p.end); }
+
+
+function sendBatch(isUnloading = false) {
+  if (eventQueue.length === 0) return;
+
+  // Make a copy of the queue and clear the original immediately
+  const batchToSend = [...eventQueue];
+  eventQueue = [];
+
+  const data = JSON.stringify(batchToSend); // Send as an array of events
+
+  // Use sendBeacon for unloading
+  if (isUnloading) {
+    navigator.sendBeacon?.(LOGGER_URL, new Blob([data], { type: 'text/plain' }));
+  } else {
+    fetch(LOGGER_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'text/plain'},
+    body: data,
+    keepalive: true // Important for requests that might happen near page unload
+    }).catch(err => {
+    console.error('Failed to send event batch:', err);
+    // If sending fails, add the events back to the front of the queue to retry
+    eventQueue.unshift(...batchToSend);
+    });
+  }
+}
+
+function logEvent(event, payload = {}, videoTime = null) {
+    eventCounter++;
+    const sessionTime = (Date.now() - sessionStartTime) / 1000;
+    const eventData = {
+    sessionId,
+    participantId,
+    page,
+    event,
+    videoTime,
+    payload,
+    sessionTime,
+    timestamp: Date.now(),
+    sequence: eventCounter
+};
+
+// --- Display ---
+document.getElementById('log-container').classList.remove('hidden');
+const displaySessionTime = fmt(sessionTime);
+let logMessage = `[${String(eventCounter).padStart(4, '0')}] At ${displaySessionTime} ${event}`;
+if (videoTime !== null) logMessage += ` at ${fmt(videoTime)}`;
+if (Object.keys(payload).length > 0) logMessage += ` (${JSON.stringify(payload)})`;
+addToLog(logMessage);
+// --- End Display ---
+
+eventQueue.push(eventData); // Add event data to the queue
+
+// If the queue is full, send immediately
+if (eventQueue.length >= MAX_QUEUE_SIZE) {
+clearTimeout(batchTimer); // Clear any existing timer
+sendBatch();
+return;
+}
+
+// Otherwise, reset the timer to send after a delay
+clearTimeout(batchTimer);
+batchTimer = setTimeout(sendBatch, BATCH_INTERVAL);
+}
+
+let currentScreenId = 'screen-intro';
+let hasNavigatedForward = false; // Track if user has moved forward
+
+function show(id) {
+  if (currentScreenId === 'screen-video' && id !== 'screen-video') {
+  pauseVideoIfPlaying('nav-away');
+
+  if (currentScreenId === 'screen-verifying') {
+      document.getElementById('screen-verifying').classList.add('hidden');
+  }
+  
+  document.getElementById(id).classList.remove('hidden');
+  currentScreenId = id;
+}
+
+document.querySelectorAll('.card').forEach(el => el.classList.add('hidden'));
+document.getElementById(id).classList.remove('hidden');
+currentScreenId = id;
+}
+
+function ts() { return new Date().toISOString().replace('T',' ').slice(0,19); }
+
+// Get session time in seconds with 2 decimal places
+function getSessionTime() {
+return Number(((Date.now() - sessionStartTime) / 1000).toFixed(2));
+}
+
+document.addEventListener('visibilitychange', () => {
+if (document.hidden && currentScreenId === 'screen-video') {
+pauseVideoIfPlaying('tab-hidden');
+}
+});
+
+window.addEventListener('beforeunload', () => {
+// stop the video and log the event before sending the final batch
+if (currentScreenId === 'screen-video') {
+pauseVideoIfPlaying('unload');
+}
+// send any remaining events in the queue.
+sendBatch(true);
+});
+
+/*** === QUIZZES === ***/
+const preQuestions = [
+{ no: 1, text: 'Pre Q1', options: ['A','B','C','D'] },
+{ no: 2, text: 'Pre Q2', options: ['A','B','C','D'] },
+{ no: 3, text: 'Pre Q3', options: ['A','B','C','D'] },
+{ no: 4, text: 'Pre Q4', options: ['A','B','C','D'] },
+{ no: 5, text: 'Pre Q5', options: ['A','B','C','D'] },
+];
+
+const postQuestions = [
+{ no: 6, text: 'Post Q1', options: ['A','B','C','D'] },
+{ no: 7, text: 'Post Q2', options: ['A','B','C','D'] },
+{ no: 8, text: 'Post Q3', options: ['A','B','C','D'] },
+{ no: 9, text: 'Post Q4', options: ['A','B','C','D'] },
+{ no: 10, text: 'Post Q5', options: ['A','B','C','D'] },
+];
+
+function renderQuiz(containerId, items) {
+  const box = document.getElementById(containerId);
+  box.innerHTML = '';
+  for (const q of items) {
+  const wrap = document.createElement('div');
+  wrap.className = 'quiz-item';
+  wrap.innerHTML = `<div><strong>Question ${q.no}.</strong> ${q.text}</div>`;
+  const name = `q-${q.no}`;
+  q.options.forEach((opt, i) => {
+  const id = `${name}-${i}`;
+  const row = document.createElement('div');
+  row.innerHTML = `
+  <label>
+  <input type="radio" name="${name}" value="${opt}" id="${id}">
+  <span> ${opt}</span>
+  </label>`;
+  row.querySelector('input').addEventListener('change', (e) => {
+  logEvent(`questionNo ${q.no} select`, { answer: opt });
+  console.log(`${ts()} --> questionNo ${q.no}, Select option ${opt}`);
+  });
+  wrap.appendChild(row);
+  });
+  box.appendChild(wrap);
+  }
+}
+
+/*** === VIDEO LOGGING === ***/
+const video = document.getElementById('lecture');
+
+function pauseVideoIfPlaying(reason = 'nav-away') {
+	if (!video || video.paused) return;
+	logEvent(`video-pause`, { reason }, video.currentTime);
+	try { video.pause(); } catch (_) {}
+}
+
+// --- Enhanced video tracking state ---
+let videoStartTime = null;
+let hasEverPlayed = false;
+let lastVideoTime = 0;
+let isSeeking = false;
+
+// --- Replay detection state ---
+let watchedIntervals = [];    // Array of [start, end] intervals that have been watched
+let currentWatchStart = null; // The start time of the current continuous playback segment
+
+const JUMP_THRESHOLD = 0.5; // Minimum seconds to consider a jump
+
+// This function merges a new interval into our historical record
+function recordWatchedInterval(newInterval) {
+    if (isAltVideo) return;
+
+    let [start, end] = newInterval;
+
+    const MIN_RECORD_DURATION = 10; 
+    if (end - start < MIN_RECORD_DURATION) {
+      console.log(`Interval [${fmt(start)}-${fmt(end)}] not recorded. Duration is less than ${MIN_RECORD_DURATION}s.`); // Optional: log why it's skipped
+      return; // The interval is too short, so we exit
+    }
+
+    let merged = false;
+    for (let i = 0; i < watchedIntervals.length; i++) {
+        const existing = watchedIntervals[i];
+        if (start <= existing[1] && end >= existing[0]) {
+            existing[0] = Math.min(start, existing[0]);
+            existing[1] = Math.max(end, existing[1]);
+            merged = true;
+            break; 
+        }
+    }
+    if (!merged) {
+        watchedIntervals.push(newInterval);
+    }
+    
+    updateIntervalsDisplay(); // <<< CALL THE UPDATE FUNCTION HERE
+}
+
+// This function checks the current playback against the historical record
+function checkForReplay(currentSegment) {
+    if (treatmentGroup !== 1) {
+        return; 
+    }
+
+    if (isAltVideo) return;
+    const [currentStart, currentEnd] = currentSegment;
+    const part = getPart(currentStart);
+    if (!part || part.accepted) return;
+
+    for (const [watchedStart, watchedEnd] of watchedIntervals) {
+        const directOverlapStart = Math.max(currentStart, watchedStart);
+        const directOverlapEnd = Math.min(currentEnd, watchedEnd);
+        if (directOverlapStart < directOverlapEnd) {
+            const relevantOverlapStart = Math.max(directOverlapStart, part.start);
+            const relevantOverlapEnd = Math.min(directOverlapEnd, part.end);
+            const relevantOverlapDuration = relevantOverlapEnd - relevantOverlapStart;
+            if (relevantOverlapDuration >= 5) {
+                logEvent("replay-detected", { overlap: relevantOverlapDuration, part, newInterval: currentSegment });
+                video.pause(); 
+                promptAlternativeVideo(currentStart, part);
+                return;
+            }
+        }
+    }
+}
+
+function logVideoEvent(eventType, videoPosition = null, extraData = {}) {
+	const sessionTime = getSessionTime();
+	const videoTime = videoPosition !== null ? fmt(videoPosition) : (video ? fmt(video.currentTime) : '0.00');
+	let message = `At ${fmt(sessionTime)}`;
+	switch(eventType) {
+		case 'play': message += ` video play at ${videoTime}`; break;
+		case 'pause': message += ` video pause at ${videoTime}`; break;
+		case 'jump': message += ` video jump from ${fmt(extraData.from)} to ${fmt(extraData.to)}`; break;
+		case 'volume': message += video.muted ? ` video muted at ${videoTime}` : ` video volume ${Math.round(video.volume * 100)}% at ${videoTime}`; break;
+		case 'speed': message += ` video speed changed to ${video.playbackRate}x at ${videoTime}`; break;
+		case 'fullscreen-enter': message += ` video entered fullscreen at ${videoTime}`; break;
+		case 'fullscreen-exit': message += ` video exited fullscreen at ${videoTime}`; break;
+		case 'ended': message += ` video ended at ${videoTime}`; break;
+		case 'stop': message += ` video stop at ${videoTime}`; break;
+	}
+	console.log(message);
+	logEvent(eventType === 'jump' ? 'video-jump' : `video-${eventType}`, extraData, video ? video.currentTime : 0);
+}
+function setupVideoLogging() {
+  if (!video) return;
+
+  video.addEventListener('play', () => {
+    if (isSeeking) return;
+    
+    if (!document.fullscreenElement) {
+      video.pause();
+      alert('Please enter fullscreen to watch the video. Use the button in the video controls.');
+      return;
+    }
+    if (!hasEverPlayed) {
+      hasEverPlayed = true;
+      videoStartTime = Date.now();
+    }
+    lastVideoTime = video.currentTime;
+    if (currentWatchStart === null) currentWatchStart = video.currentTime;
+    logVideoEvent('play', video.currentTime);
+  });
+
+  video.addEventListener('pause', () => {
+    if (isSeeking) return;
+
+    if (hasEverPlayed) {
+      if (currentWatchStart !== null) {
+          recordWatchedInterval([currentWatchStart, lastVideoTime]);
+          currentWatchStart = null;
+      }
+      logVideoEvent('pause', video.currentTime);
+    }
+  });
+
+  video.addEventListener('seeking', () => {
+    console.log("Event: seeking");
+    isSeeking = true; 
+    if (currentWatchStart !== null) {
+        recordWatchedInterval([currentWatchStart, lastVideoTime]);
+        currentWatchStart = null;
+    }
+  });
+
+  video.addEventListener('seeked', () => {
+    console.log("Event: seeked"); // For debugging
+    const from = lastVideoTime;
+    const to = video.currentTime;
+
+    // Log the jump event unconditionally, because 'seeked' means a seek just ended.
+    if (Math.abs(to - from) >= JUMP_THRESHOLD) {
+      logVideoEvent('jump', null, { from, to });
+    }
+
+    // Reset state for the next action
+    isSeeking = false;
+    lastVideoTime = to;
+    currentWatchStart = to;
+  });
+  
+  video.addEventListener('timeupdate', () => {
+    if (isSeeking || video.paused) return;
+    
+    const currentTime = video.currentTime;
+
+    // --- (2) Robustness for Keyboard Seeking ---
+    if (currentTime < lastVideoTime - JUMP_THRESHOLD) {
+        if (currentWatchStart !== null) {
+            recordWatchedInterval([currentWatchStart, lastVideoTime]);
+        }
+        currentWatchStart = currentTime;
+    }
+
+    if (currentWatchStart !== null) {
+      checkForReplay([currentWatchStart, currentTime]);
+    }
+    lastVideoTime = currentTime;
+  });
+
+  video.addEventListener('ended', () => {
+    if (currentWatchStart !== null) {
+        recordWatchedInterval([currentWatchStart, video.duration]);
+        currentWatchStart = null;
+    }
+    logVideoEvent('ended', video.currentTime);
+  });
+
+  video.addEventListener('loadedmetadata', () => {
+    videoStartTime = null;
+    hasEverPlayed = false;
+    lastVideoTime = 0;
+    isSeeking = false;
+    watchedIntervals = [];
+    currentWatchStart = null;
+    logEvent('video-loaded', { duration: video.duration }, 0);
+  });
+
+  video.addEventListener('volumechange', () => { if (hasEverPlayed) logVideoEvent('volume'); });
+  video.addEventListener('ratechange', () => { if (hasEverPlayed) logVideoEvent('speed'); });
+  video.addEventListener('error', (e) => {
+    logEvent('video-error', { error: video.error?.code || 'unknown', message: video.error?.message || 'unknown error' }, video.currentTime);
+  });
+}
+
+// Handle fullscreen changes
+document.addEventListener('fullscreenchange', () => {
+  const isFullscreen = !!document.fullscreenElement;
+  if (isFullscreen) {
+    if (hasEverPlayed) logVideoEvent('fullscreen-enter', video.currentTime);
+  } else {
+    if (isExitingForPrompt) {
+      // If so, reset the flag and do not end the session.
+      isExitingForPrompt = false;
+      return; 
+    }
+
+    if (currentScreenId !== 'screen-intro' && currentScreenId !== 'screen-id') {
+      logEvent('fullscreen-forced-exit');
+      pauseVideoIfPlaying('fullscreen-exit');
+      logEvent('post-quiz-complete', { forced: true });
+      show('screen-done');
+      enterPage('finish');
+      clearTimeout(batchTimer);
+      sendBatch();
+    }
+  }
+});
+
+/*** === BACK NAVIGATION LOCKING === ***/
+function lockBackNavigation() {
+// Disable all back buttons
+document.querySelectorAll('button.secondary').forEach(btn => {
+btn.disabled = true;
+btn.style.opacity = '0.5';
+btn.style.cursor = 'not-allowed';
+btn.title = 'Back navigation is disabled after moving forward';
+});
+}
+
+/*** === NAVIGATION === ***/
+function enterPage(name) {
+page = name;
+logEvent('enter-page', { at: ts() });
+}
+
+document.getElementById('fullscreen-btn').addEventListener('click', async () => {
+  try {
+    await document.documentElement.requestFullscreen();
+    show('screen-id');
+    enterPage('check-prolific-id');
+  } catch (err) {
+    alert("Please allow fullscreen mode to continue.");
+  }
+});
+
+document.getElementById('back-1').addEventListener('click', () => {
+if (!hasNavigatedForward) {
+show('screen-intro');
+enterPage('intro');
+}
+});
+
+document.getElementById('to-pre').addEventListener('click', async () => {
+  const val = document.getElementById('participant-id').value.trim();
+  if (!val) { alert('Please type your Andrew ID'); return; }
+
+  participantId = val;
+  hasNavigatedForward = true;
+  lockBackNavigation();
+
+  // Show verifying screen
+  show('screen-verifying');
+  enterPage('verifying');
+
+  // Reset progress bar
+  const bar = document.getElementById('verify-progress');
+  bar.style.width = "0%";
+
+  // Fake progress animation (up to 90%)
+  let progress = 0;
+  const interval = setInterval(() => {
+    if (progress < 90) {
+      progress += 5;
+      bar.style.width = progress + "%";
+    }
+  }, 200);
+
+  try {
+    const resp = await fetch(LOGGER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify([{ participantId: val, checkOnly: true }])
+    });
+    const result = await resp.json();
+
+    clearInterval(interval);
+    bar.style.width = "100%"; // complete
+
+    // Delay slightly to let the bar reach 100%
+    setTimeout(() => {
+      if (result.blocked) {
+        show('screen-blocked');
+        enterPage('blocked');
+      } else {
+        treatmentGroup = parseInt(result.treatment, 10);
+        console.log(`Participant assigned to treatment group: ${treatmentGroup}`); // For debugging
+        show('screen-pre');
+        enterPage('pre-test');
+      }
+    }, 500);
+  } catch (err) {
+    clearInterval(interval);
+    console.error("Status check failed:", err);
+    alert("Could not verify your ID, please try again.");
+    show('screen-id');
+    enterPage('check-prolific-id');
+  }
+});
+
+document.getElementById('back-2').addEventListener('click', () => {
+if (!hasNavigatedForward) {
+show('screen-id');
+enterPage('check-prolific-id');
+}
+});
+
+document.getElementById('to-video').addEventListener('click', () => {
+  // Clear any old warnings/highlights
+  document.querySelectorAll('.quiz-item').forEach(el => {
+    el.style.boxShadow = '';
+  });
+  const warnBox = document.getElementById('quiz-warning');
+  if (warnBox) warnBox.remove();
+
+  // Validate pre-quiz answers
+  const unanswered = validateQuizAnswers('pre-quiz', preQuestions);
+  if (unanswered.length > 0) {
+    showValidationError(unanswered);
+    logEvent('pre-quiz-incomplete', { unansweredQuestions: unanswered });
+    return;
+  }
+
+  logEvent('pre-quiz-complete');
+  show('screen-video');
+  enterPage('video');
+  setupVideoLogging();
+});
+
+document.getElementById('to-post').addEventListener('click', () => {
+// Log video stop when leaving video page
+if (video && hasEverPlayed) {
+logVideoEvent('stop', video.currentTime);
+}
+show('screen-post');
+enterPage('post-quiz-1');
+});
+
+document.getElementById('back-4').addEventListener('click', () => {
+if (!hasNavigatedForward) {
+show('screen-video');
+enterPage('video');
+}
+});
+
+document.getElementById('to-finish').addEventListener('click', () => {
+// Validate post-quiz answers
+const unanswered = validateQuizAnswers('post-quiz', postQuestions);
+if (unanswered.length > 0) {
+showValidationError(unanswered);
+logEvent('post-quiz-incomplete', { unansweredQuestions: unanswered });
+return;
+}
+
+logEvent('post-quiz-complete');
+show('screen-done');
+enterPage('finish');
+
+// Force sending the final batch of events immediately upon completion.
+clearTimeout(batchTimer); // Clear any pending timer
+sendBatch(); // Send the queue now
+});
+
+// === QUIZ VALIDATION ===
+function validateQuizAnswers(containerId, items) {
+const missing = [];
+for (const q of items) {
+const picked = document.querySelector(`input[name="q-${q.no}"]:checked`);
+if (!picked) missing.push(q.no);
+}
+return missing;
+}
+
+function showValidationError(unanswered) {
+  // Clear previous highlights
+  document.querySelectorAll('.quiz-item').forEach(el => {
+    el.style.boxShadow = '';
+  });
+
+  // Add highlight to each missing one
+  unanswered.forEach(no => {
+    const anyInput = document.querySelector(`input[name="q-${no}"]`);
+    const wrap = anyInput ? anyInput.closest('.quiz-item') : null;
+    if (wrap) wrap.style.boxShadow = 'inset 0 0 0 2px #ef4444';
+  });
+
+  // Scroll to the first unanswered
+  const first = unanswered[0];
+  const firstInput = document.querySelector(`input[name="q-${first}"]`);
+  firstInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Show a custom inline warning instead of alert
+  let warnBox = document.getElementById('quiz-warning');
+  if (!warnBox) {
+    warnBox = document.createElement('div');
+    warnBox.id = 'quiz-warning';
+    warnBox.style.color = '#b91c1c';
+    warnBox.style.fontWeight = '600';
+    warnBox.style.marginTop = '12px';
+    document.getElementById(currentScreenId).appendChild(warnBox);
+  }
+  warnBox.textContent = `⚠️ Please answer question(s): ${unanswered.join(', ')}`;
+}
+
+function promptAlternativeVideo(returnTime, part) {
+  // Check if an element is fullscreen, AND if that element is our video player
+  if (document.fullscreenElement === video) {
+    // If so, exit fullscreen. This will return to the 'page fullscreen' state.
+    document.exitFullscreen();
+
+    // Give the browser a moment to exit before showing the prompt
+    setTimeout(() => {
+      showPromptUI(returnTime, part);
+    }, 100); // 100ms delay to ensure transition completes
+  } else {
+    // If we are not in video-fullscreen, show the prompt immediately.
+    showPromptUI(returnTime, part);
+  }
+}
+
+function showPromptUI(returnTime, part) {
+  if (document.getElementById('alt-video-prompt')) return;
+
+  const box = document.createElement('div');
+  box.id = 'alt-video-prompt';
+  box.innerHTML = `<p>You replayed this part. Would you like to watch an alternative explanation?</p><div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button id="alt-yes">Yes</button><button id="alt-no">No</button></div>`;
+  Object.assign(box.style, { position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", zIndex: "2000" });
+  document.body.appendChild(box);
+  document.getElementById('alt-yes').onclick = () => {
+    part.accepted = true;
+    logEvent('alt-video-start', { part });
+    showAlternativeVideo(returnTime, part); // Pass the part object
+    box.remove();
+  };
+  document.getElementById('alt-no').onclick = () => {
+    logEvent('alt-video-decline', { part });
+    video.play();
+    box.remove();
+  };
+}
+
+// function promptAlternativeVideo(returnTime, part) {
+//   if (document.fullscreenElement) {
+//     isExitingForPrompt = true;
+//     document.exitFullscreen(); 
+//   }
+
+//   if (document.getElementById('alt-video-prompt')) return;
+
+//   const box = document.createElement('div');
+//   box.id = 'alt-video-prompt';
+//   box.innerHTML = `<p>You replayed this part. Would you like to watch an alternative explanation?</p><div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button id="alt-yes">Yes</button><button id="alt-no">No</button></div>`;
+//   Object.assign(box.style, { position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", zIndex: "2000" });
+//   document.body.appendChild(box);
+//   document.getElementById('alt-yes').onclick = () => {
+//     part.accepted = true;
+//     logEvent('alt-video-start', { part });
+//     showAlternativeVideo(returnTime, part); // Pass the part object
+//     box.remove();
+//   };
+//   document.getElementById('alt-no').onclick = () => {
+//     logEvent('alt-video-decline', { part });
+//     video.play();
+//     box.remove();
+//   };
+// }
+
+function showAlternativeVideo(returnTime, part) {
+    isAltVideo = true;
+
+    const videoTitle = document.querySelector('#screen-video h2');
+    const originalTitle = videoTitle.textContent; // Store original title
+    
+    // Set the dynamic title for the alternative video
+    videoTitle.textContent = `Video Part ${part.partNumber} - ${part.topic}`;
+
+    const originalBtnRow = document.querySelector('#screen-video .btnrow');
+    const altNav = document.createElement('div');
+    altNav.className = 'btnrow';
+    altNav.innerHTML = `<button id="alt-return">← Go back to original video</button><button id="alt-to-post">Continue to post-quiz →</button>`;
+    
+    originalBtnRow.replaceWith(altNav);
+
+    const originalSrc = video.querySelector('source').src;
+    const originalOnEnded = video.onended;
+    
+    document.getElementById('alt-to-post').onclick = () => {
+      // Directly perform the actions instead of clicking another button
+      if (video && hasEverPlayed) {
+        logVideoEvent('stop', video.currentTime);
+      }
+      show('screen-post');
+      enterPage('post-quiz-1');
+    };
+
+    document.getElementById('alt-return').onclick = () => {
+      isAltVideo = false;
+      videoTitle.textContent = originalTitle; // Restore original title
+      altNav.replaceWith(originalBtnRow);
+      video.onended = originalOnEnded;
+      video.querySelector('source').src = originalSrc;
+      video.load();
+      video.currentTime = returnTime;
+      video.play();
+    };
+
+    video.pause();
+    video.querySelector('source').src = part.altSrc;
+    video.load();
+    video.play();
+
+    video.onended = () => {
+        logEvent('alt-video-ended');
+    };
+}
+
+function updateIntervalsDisplay() {
+  const displayEl = document.getElementById('intervals-display');
+  if (!displayEl) return;
+
+  if (watchedIntervals.length === 0) {
+    displayEl.textContent = '[No intervals recorded yet]';
+  } else {
+    // Sort intervals by start time for easier reading
+    const sortedIntervals = watchedIntervals.sort((a, b) => a[0] - b[0]);
+    
+    // Format each interval like "[start - end]" and join them
+    const formattedText = sortedIntervals.map(interval => {
+      return `[${fmt(interval[0])} - ${fmt(interval[1])}]`;
+    }).join(' ');
+    
+    displayEl.textContent = formattedText;
+  }
+}
+
+/*** === INIT === ***/
+renderQuiz('pre-quiz', preQuestions);
+renderQuiz('post-quiz', postQuestions);
+enterPage('intro');
+</script>
+</body>
+</html>
