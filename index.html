@@ -41,7 +41,7 @@ z-index: 1000;
 <div class="wrap">
 <!-- Your existing HTML content remains the same -->
 <div id="screen-intro" class="card">
-<h1>Welcome to the A/B Testing, Design, and Analysis course!</h1>
+<h1>Welcome to the A/B Testing course!</h1>
 <p>There are videos here for you to watch. Check it out.</p>
 <ul class="list">
 <li>Rule: Please complete all answers on your own. AI tools are not allowed.</li>
@@ -119,8 +119,7 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 </div>
 <script>
 /*** === CONFIG === ***/
-// const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbyCVvnZtlz9hDq0H9EZZSIQGV0lqIGd75Wy3ibt3dTAzu2b8EJCuKClIPhTFVAifd72/exec'; //version 5 (replay + event)
-const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbxCtc4CThJmqWlzGZEo1Q64itXVKmBSZcy5Xpkpso7eKQZJdR167yUjfAb99fLlPkAp/exec'; //version 6 (replay + random)
+const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbxCtc4CThJmqWlzGZEo1Q64itXVKmBSZcy5Xpkpso7eKQZJdR167yUjfAb99fLlPkAp/exec'; //(replay + random)
 const MAX_VIDEO_MINUTES = 20;
 
 /*** === STATE & UTIL === ***/
@@ -203,7 +202,7 @@ function logEvent(event, payload = {}, videoTime = null) {
 };
 
 // --- Display ---
-document.getElementById('log-container').classList.remove('hidden');
+//document.getElementById('log-container').classList.remove('hidden');
 const displaySessionTime = fmt(sessionTime);
 let logMessage = `[${String(eventCounter).padStart(4, '0')}] At ${displaySessionTime} ${event}`;
 if (videoTime !== null) logMessage += ` at ${fmt(videoTime)}`;
@@ -762,32 +761,6 @@ function showPromptUI(returnTime, part) {
     box.remove();
   };
 }
-
-// function promptAlternativeVideo(returnTime, part) {
-//   if (document.fullscreenElement) {
-//     isExitingForPrompt = true;
-//     document.exitFullscreen(); 
-//   }
-
-//   if (document.getElementById('alt-video-prompt')) return;
-
-//   const box = document.createElement('div');
-//   box.id = 'alt-video-prompt';
-//   box.innerHTML = `<p>You replayed this part. Would you like to watch an alternative explanation?</p><div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button id="alt-yes">Yes</button><button id="alt-no">No</button></div>`;
-//   Object.assign(box.style, { position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 20px rgba(0,0,0,0.2)", zIndex: "2000" });
-//   document.body.appendChild(box);
-//   document.getElementById('alt-yes').onclick = () => {
-//     part.accepted = true;
-//     logEvent('alt-video-start', { part });
-//     showAlternativeVideo(returnTime, part); // Pass the part object
-//     box.remove();
-//   };
-//   document.getElementById('alt-no').onclick = () => {
-//     logEvent('alt-video-decline', { part });
-//     video.play();
-//     box.remove();
-//   };
-// }
 
 function showAlternativeVideo(returnTime, part) {
     isAltVideo = true;
