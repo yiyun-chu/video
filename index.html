@@ -230,7 +230,7 @@ function show(id) {
   if (prompt) {
     prompt.remove();
   }
-  
+
   if (currentScreenId === 'screen-video' && id !== 'screen-video') {
   pauseVideoIfPlaying('nav-away');
 
@@ -522,7 +522,7 @@ document.addEventListener('fullscreenchange', () => {
       return; 
     }
 
-    if (currentScreenId !== 'screen-intro' && currentScreenId !== 'screen-id') {
+    if (currentScreenId !== 'screen-intro') {
       logEvent('fullscreen-forced-exit');
       pauseVideoIfPlaying('fullscreen-exit');
       logEvent('post-quiz-complete', { forced: true });
