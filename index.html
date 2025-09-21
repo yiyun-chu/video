@@ -226,6 +226,11 @@ let currentScreenId = 'screen-intro';
 let hasNavigatedForward = false; // Track if user has moved forward
 
 function show(id) {
+  const prompt = document.getElementById('alt-video-prompt');
+  if (prompt) {
+    prompt.remove();
+  }
+  
   if (currentScreenId === 'screen-video' && id !== 'screen-video') {
   pauseVideoIfPlaying('nav-away');
 
