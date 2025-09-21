@@ -359,9 +359,10 @@ function recordWatchedInterval(newInterval) {
 
 // This function checks the current playback against the historical record
 function checkForReplay(currentSegment) {
-    if (treatmentGroup !== 1) {
-        return; 
-    }
+
+    if (currentScreenId !== 'screen-video') return;
+
+    if (treatmentGroup !== 1) {return;}
 
     if (isAltVideo) return;
     const [currentStart, currentEnd] = currentSegment;
