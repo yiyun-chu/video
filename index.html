@@ -7,7 +7,7 @@
 <style>
 :root { --w: 1600px; --gap: 18px; }
 body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#fafafa; color:#111; }
-.wrap { max-width: var(--w); margin: 40px auto; padding: 0 16px; }
+.wrap { max-width: var(--w); margin: 40px auto; padding: 0 16px; margin-left: 260px;}
 .card { background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.06); padding:28px; }
 h1,h2 { margin:0 0 12px; }
 .btnrow { display:flex; gap:12px; margin-top:22px; }
@@ -46,6 +46,45 @@ z-index: 1000;
   margin: 0 0 10px;
   font-weight: 500;
   color: #163a76;
+}
+/* Sidebar for video navigation */
+#video-sidebar {
+  position: fixed;
+  top: 60px;
+  left: 10px;
+  width: 220px;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  padding: 12px;
+  font-size: 15px;
+  z-index: 900;
+}
+#video-sidebar h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #163a76;
+}
+#video-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+#video-sidebar li {
+  margin: 6px 0;
+}
+#video-sidebar button {
+  background: none;
+  border: none;
+  color: #1f6feb;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  padding: 4px 0;
+}
+#video-sidebar button:hover {
+  text-decoration: underline;
 }
 </style>
 </head>
@@ -132,6 +171,10 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
         <button id="to-post">→ Continue to post-quiz</button>
     </div>
 </div>
+<div id="video-sidebar" class="hidden">
+  <h3>Video Parts</h3>
+  <ul id="sidebar-list"></ul>
+</div>
 
 <div id="screen-post" class="card hidden">
 <h2>Post-quiz</h2>
@@ -156,7 +199,6 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
     </div>
 </div>
 
-<!-- CHANGED: Removed the <source> tag from the video element. The source will now be set entirely by JavaScript. -->
 <video id="lecture" class="vid" controls controlsList="nodownload nofullscreen" preload="metadata" style="display:none;"></video>
 
 <script>
@@ -176,6 +218,9 @@ let eventQueue = [];
 let batchTimer = null;
 let isAltVideo = false;
 let isExitingForPrompt = false;
+// --- MODIFIED ---
+// New flag to prevent the prompt from showing immediately after returning from an alt video.
+let isReturningFromAlt = false;
 
 const BATCH_INTERVAL = 3000;
 const MAX_QUEUE_SIZE = 20;
@@ -190,25 +235,38 @@ logContainer.appendChild(logEntry);
 logContainer.scrollTop = logContainer.scrollHeight;
 }
 
-// --- Main Video Parts ---
 const parts = [
-  { partNumber: 1, topic: "Introduction", accepted: false,
+  { partNumber: 1, topic: "Introduction",
     mainSrc: "https://www.dropbox.com/scl/fi/350ea5iypwa99mbmd3yim/When-Conditions-Change-So-Does-the-Rate.mp4?rlkey=he9wvbdy2087nujkbrwtg7iey&st=a1uocf1l&raw=1",
     altSrc: "https://www.dropbox.com/scl/fi/pc3ws56rqc0mglit2uvkg/RCII-U5-S2.mp4?rlkey=22axv1dg8getivo9ke3zizxsx&st=5q52eoqv&raw=1"
   },
-  { partNumber: 2, topic: "Why Matters?", accepted: false,
-    mainSrc: "https://www.dropbox.com/scl/fi/7320pzlpkjs0vvp17wefs/Strong-Acids-and-Bases-All-In_-Acid_Base-Edition.mp4?rlkey=45twyqmmb99yvve23s14r2w77&st=6t2cz6vk&raw=1", 
+  { partNumber: 2, topic: "Why Matters?",
+    mainSrc: "https://www.dropbox.com/scl/fi/7320pzlpkjs0vvp17wefs/Strong-Acids-and-Bases-All-In_-Acid_Base-Edition.mp4?rlkey=45twyqmmb99yvve23s14r2w77&st=6t2cz6vk&raw=1",
     altSrc: "https://www.dropbox.com/scl/fi/qxefp6rba6w664vdyvsga/RCII-U7-S1.mp4?rlkey=7vldsfpdlja0e7vqoazwjfzy1&raw=1"
   },
-  { partNumber: 3, topic: "Core Concepts", accepted: false,
-    mainSrc: "https://www.dropbox.com/scl/fi/vekzd50iegquo1yquphwd/Curve-Your-Enthusiasm-for-Kinetics.mp4?rlkey=67shz1rirk2ankpen9mar1kbx&st=b8wwztxd&raw=1", 
-    altSrc: "https://www.dropbox.com/scl/fi/62h7npfuualeoi0kia1vz/RCII-U4-S3.mp4?rlkey=rfavu6e58l5kt2lnu6pfgik4v&st=yhzk8z3c&raw=1"    
+  { partNumber: 3, topic: "Core Concepts",
+    mainSrc: "https://www.dropbox.com/scl/fi/vekzd50iegquo1yquphwd/Curve-Your-Enthusiasm-for-Kinetics.mp4?rlkey=67shz1rirk2ankpen9mar1kbx&st=b8wwztxd&raw=1",
+    altSrc: "https://www.dropbox.com/scl/fi/62h7npfuualeoi0kia1vz/RCII-U4-S3.mp4?rlkey=rfavu6e58l5kt2lnu6pfgik4v&st=yhzk8z3c&raw=1"
   },
-  { partNumber: 4, topic: "Conclusion", accepted: false,
-    mainSrc: "https://www.dropbox.com/scl/fi/qzxv6ngpl3oyfy9e1xijy/Burning-Rusting-and-Everything-Between.mp4?rlkey=cfc6nbnl11ir3ni7nxebcj51p&st=6bizmjwb&raw=1",  
-    altSrc: "https://www.dropbox.com/scl/fi/1jryc87it4jvwmpbzxptp/RCII-U1-S3.mp4?rlkey=70dmcyj8ng5xp65nfj8i3xyc9&st=8e1zb6od&raw=1"        
+  { partNumber: 4, topic: "Conclusion",
+    mainSrc: "https://www.dropbox.com/scl/fi/qzxv6ngpl3oyfy9e1xijy/Burning-Rusting-and-Everything-Between.mp4?rlkey=cfc6nbnl11ir3ni7nxebcj51p&st=6bizmjwb&raw=1",
+    altSrc: "https://www.dropbox.com/scl/fi/1jryc87it4jvwmpbzxptp/RCII-U1-S3.mp4?rlkey=70dmcyj8ng5xp65nfj8i3xyc9&st=8e1zb6od&raw=1"
   },
 ];
+
+const sidebarList = document.getElementById('sidebar-list');
+parts.forEach(part => {
+  const li = document.createElement('li');
+  const btn = document.createElement('button');
+  btn.textContent = `Part ${part.partNumber}: ${part.topic}`;
+  btn.addEventListener('click', () => {
+    show(`screen-video-${part.partNumber}`);
+    enterPage(`video-${part.partNumber}`);
+    setupVideoLogging();
+  });
+  li.appendChild(btn);
+  sidebarList.appendChild(li);
+});
 
 function getCurrentPart() {
     if (!currentScreenId.startsWith('screen-video-')) return null;
@@ -269,7 +327,7 @@ const video = document.getElementById('lecture');
 function show(id) {
   const existingPrompt = document.getElementById('alt-video-prompt-container');
   if (existingPrompt) existingPrompt.remove();
-  
+
   const isSwitchingToVideoPage = id.startsWith('screen-video-');
   const isLeavingVideoPage = currentScreenId.startsWith('screen-video-') && !isSwitchingToVideoPage;
 
@@ -282,9 +340,15 @@ function show(id) {
   document.querySelectorAll('.card').forEach(el => el.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
   currentScreenId = id;
-  
+
+  const sidebar = document.getElementById('video-sidebar');
   if (isSwitchingToVideoPage) {
-    // Reset state for the new video part
+    sidebar.classList.remove('hidden');
+  } else {
+    sidebar.classList.add('hidden');
+  }
+
+  if (isSwitchingToVideoPage) {
     isAltVideo = false;
     watchedIntervals = [];
     updateIntervalsDisplay();
@@ -300,10 +364,9 @@ function show(id) {
       container.appendChild(video);
       video.style.display = 'block';
 
-      // Set the source to the main video for this part
       if (video.src !== part.mainSrc) {
         video.src = part.mainSrc;
-        video.load(); // Explicitly load the new source
+        video.load();
       }
     }
   }
@@ -463,16 +526,17 @@ function setupVideoLogging() {
     if (Math.abs(to - from) >= JUMP_THRESHOLD) {
       logVideoEvent('jump', null, { from, to });
       
-      // --- replay detection logic ---
-      if (!isAltVideo && treatmentGroup === 1) {
+      // --- MODIFIED ---
+      // Added a check for "!isReturningFromAlt" to prevent the prompt from
+      // showing on the programmatic seek when returning from an alt video.
+      if (!isAltVideo && treatmentGroup === 1 && !isReturningFromAlt) {
         const part = getCurrentPart();
-        if (part && !part.accepted) {
-          // Check if the user is jumping back into a previously watched interval FOR THIS VIDEO
+        if (part) {
           for (const [watchedStart, watchedEnd] of watchedIntervals) {
             if (to >= watchedStart && to <= watchedEnd) {
               logEvent("replay-jump-detected", { part: part.partNumber, jumpTo: to });
               promptAlternativeVideo(to, part);
-              break; // Stop checking after finding one match
+              break;
             }
           }
         }
@@ -481,6 +545,12 @@ function setupVideoLogging() {
     isSeeking = false;
     lastVideoTime = to;
     currentWatchStart = to;
+    
+    // --- MODIFIED ---
+    // Reset the flag after the seek is complete, so the next user-initiated seek is checked.
+    if (isReturningFromAlt) {
+        isReturningFromAlt = false;
+    }
   });
   
   video.addEventListener('timeupdate', () => {
@@ -680,11 +750,10 @@ function showPromptUI(returnTime, part) {
   container.appendChild(box);
 
   document.getElementById('alt-yes').onclick = () => {
-    part.accepted = true;
     logEvent('alt-video-start', { part: part.partNumber });
     pauseVideoIfPlaying('alt-video-accepted');
-    box.remove(); // remove the prompt and its .btnrow first
-    showAlternativeVideo(returnTime, part);   
+    box.remove();
+    showAlternativeVideo(returnTime, part);
   };
   document.getElementById('alt-no').onclick = () => {
     logEvent('alt-video-decline', { part: part.partNumber });
@@ -698,27 +767,22 @@ function showAlternativeVideo(returnTime, part) {
     const videoTitle = currentScreen.querySelector('h2');
     
     const rows = currentScreen.querySelectorAll('.btnrow');
-    const originalBtnRow = rows[rows.length - 1]; // bottom nav row
+    const originalBtnRow = rows[rows.length - 1];
     
-    // Store original UI state
     const originalTitle = videoTitle.textContent;
 
-    // Hide the original button row and create a new one for the alt video
     originalBtnRow.style.display = 'none';
     const newBtnRow = document.createElement('div');
     newBtnRow.className = 'btnrow';
-    originalBtnRow.after(newBtnRow); // Insert the new row right after the original
+    originalBtnRow.after(newBtnRow);
 
-    // Update the page title
     videoTitle.textContent = `Alternative Video for Part ${part.partNumber} - ${part.topic}`;
 
-    // 1. Create the "Back to Main Video" button
     const backButton = document.createElement('button');
     backButton.className = 'secondary';
     backButton.textContent = '← Back to Main Video';
     newBtnRow.appendChild(backButton);
 
-    // 2. Create the "Continue" button
     const continueButton = document.createElement('button');
     const nextPartNumber = part.partNumber + 1;
     continueButton.textContent = (nextPartNumber <= parts.length)
@@ -726,18 +790,21 @@ function showAlternativeVideo(returnTime, part) {
         : '→ Continue to post-quiz';
     newBtnRow.appendChild(continueButton);
 
-    // Helper function to restore the original UI
     function restoreOriginalUI() {
         isAltVideo = false;
         videoTitle.textContent = originalTitle;
-        newBtnRow.remove(); // Remove our temporary button row
-        originalBtnRow.style.display = 'flex'; // Show the original row again
+        newBtnRow.remove();
+        originalBtnRow.style.display = 'flex';
     }
 
     backButton.onclick = () => {
         logEvent('alt-video-return', { part: part.partNumber, returnTime: returnTime });
         restoreOriginalUI();
-        // Load the main video and jump back to where the user was
+        
+        // --- MODIFIED ---
+        // Set the flag to true before changing the video source.
+        isReturningFromAlt = true;
+        
         video.src = part.mainSrc;
         video.load();
         video.addEventListener('loadedmetadata', () => {
@@ -751,17 +818,14 @@ function showAlternativeVideo(returnTime, part) {
         restoreOriginalUI();
         
         if (nextPartNumber <= parts.length) {
-            // Go to the next part's main video screen
             show(`screen-video-${nextPartNumber}`);
             enterPage(`video-${nextPartNumber}`);
         } else {
-            // Or go to the post-quiz if this was the last part
             show('screen-post');
             enterPage('post-quiz');
         }
     };
 
-    // --- Load and play the alternative video ---
     video.src = part.altSrc;
     video.load();
     video.play();
@@ -771,7 +835,6 @@ function showAlternativeVideo(returnTime, part) {
 }
 
 function updateIntervalsDisplay() {
-   // document.getElementById('log-container').classList.remove('hidden');
   const displayEl = document.getElementById('intervals-display');
   if (!displayEl) return;
   if (watchedIntervals.length === 0) {
