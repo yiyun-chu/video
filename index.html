@@ -214,7 +214,7 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 <script>
 
 /*** === CONFIG === ***/
-const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbxCtc4CThJmqWlzGZEo1Q64itXVKmBSZcy5Xpkpso7eKQZJdR167yUjfAb99fLlPkAp/exec';
+const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbxNZH8ojntqLhX-KPN8DDatSGFVE_C4w_ELAvAeAzxBvcrlN09CB-I8vub_JWCjGCcKEw/exec'; // (replay + attempt)
 const MAX_VIDEO_MINUTES = 20;
 
 /*** === STATE & UTIL === ***/
@@ -270,6 +270,7 @@ parts.forEach(part => {
   const btn = document.createElement('button');
   btn.textContent = `Part ${part.partNumber}: ${part.topic}`;
   btn.addEventListener('click', () => {
+    logEvent('sidebar-click', { part: part.partNumber, topic: part.topic });
     show(`screen-video-${part.partNumber}`);
     enterPage(`video-${part.partNumber}`);
     setupVideoLogging();
@@ -607,7 +608,7 @@ document.addEventListener('fullscreenchange', () => {
       isExitingForPrompt = false;
       return; 
     }
-    if (currentScreenId !== 'screen-intro') {
+    if (currentScreenId !== 'screen-intro' && currentScreenId !== 'screen-done') {
       logEvent('fullscreen-forced-exit');
       pauseVideoIfPlaying('fullscreen-exit');
       logEvent('post-quiz-complete', { forced: true });
@@ -882,6 +883,18 @@ function updateIntervalsDisplay() {
 }
 
 /*** === INIT === ***/
+const videoElement = document.getElementById('lecture');
+videoElement.addEventListener('click', () => {
+  // Check if the video is currently paused or has ended
+  if (videoElement.paused || videoElement.ended) {
+    // If it is, play the video
+    videoElement.play();
+  } else {
+    // If it's already playing, pause the video
+    videoElement.pause();
+  }
+});
+
 renderQuiz('pre-quiz', preQuestions);
 renderQuiz('post-quiz', postQuestions);
 renderQuiz('survey-quiz', surveyQuestions);
