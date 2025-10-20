@@ -657,8 +657,6 @@ function setupVideoLogging() {
     lastVideoTime = to;
     currentWatchStart = to;
     
-    // --- MODIFIED ---
-    // Reset the flag after the seek is complete, so the next user-initiated seek is checked.
     if (isReturningFromAlt) {
         isReturningFromAlt = false;
     }
