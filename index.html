@@ -247,6 +247,15 @@ let isAltVideo = false;
 let isExitingForPrompt = false;
 let isReturningFromAlt = false;
 
+// --- NEW: Question banks will be loaded from the encoded file ---
+let easyQuestions = [];
+let mediumQuestions = [];
+let hardQuestions = [];
+let surveyQuestions = [];
+let preQuestions = [];
+let postQuestions = [];
+
+
 const BATCH_INTERVAL = 3000;
 const MAX_QUEUE_SIZE = 20;
 
@@ -275,7 +284,7 @@ const parts = [
   },
   { partNumber: 4, topic: "Key Takeaway",
     mainSrc: "https://www.dropbox.com/scl/fi/68835bk10zciz9nro70d6/td_4.mp4?rlkey=1736y56ht0b1incuxo6g17lz8&st=y9bqqtsv&raw=1",
-    altSrc: "https://www.dropbox.com/scl/fi/s3gym38ipz40u6ioaa3wt/td_1.mp4?rlkey=x9cczab12zgkd0tu5wf032rs9&st=hm9q8lvt&raw=1"
+altSrc: "https://www.dropbox.com/scl/fi/s3gym38ipz40u6ioaa3wt/td_1.mp4?rlkey=x9cczab12zgkd0tu5wf032rs9&st=hm9q8lvt&raw=1"
   },
 ];
 
@@ -370,13 +379,12 @@ function show(id) {
   const sidebar = document.getElementById('video-sidebar');
   const wrap = document.querySelector('.wrap'); // Get the main content wrapper
 
-  // --- MODIFIED ---: Dynamically adjust layout based on whether the sidebar is visible
   if (isSwitchingToVideoPage) {
     sidebar.classList.remove('hidden');
-    wrap.style.marginLeft = '260px'; // Add space for the sidebar
+    wrap.style.marginLeft = '260px'; 
   } else {
     sidebar.classList.add('hidden');
-    wrap.style.marginLeft = 'auto'; // Reset to center the content
+    wrap.style.marginLeft = 'auto';
   }
 
   if (isSwitchingToVideoPage) {
@@ -431,44 +439,7 @@ sendBatch(true);
 });
 
 /*** === QUIZZES === ***/
-const easyQuestions = [
-    { id: 'E1', type: 'text', content: 'Why do we add time dummies to a panel regression?', options: ['To correct measurement error in the explanatory variable', 'To absorb period-specific shocks that affect all units at the same time', 'To remove every possible omitted variable', 'To force the errors to have constant variance'] },
-    { id: 'E2', type: 'text', content: 'Suppose x tends to be higher in years when macro conditions also push up y. If you omit time dummies, what happens to the estimated slope on x?', options: ['It remains unbiased', 'It is only less precise, not biased', 'It becomes exactly zero', 'It can be biased upward or downward'] },
-    { id: 'E3', type: 'text', content: 'For high frequency data with visible seasonality, which specification choice is most appropriate?', options: ['Include dummies for months/quarters to capture seasonality patterns', 'Include only annual dummies', 'Include only a linear time trend', 'Omit time controls and model serial correlation in the errors'] },
-    { id: 'E4', type: 'text', content: 'When time dummies are included, how should we interpret the coefficient on x?', options: ['As an average comparison across firms over all years', 'As a pre-policy effect only', 'As a comparison across years using only averages', 'As a comparison across firms within the same year'] },
-    { id: 'E5', type: 'text', content: 'Why is it useful to color a scatterplot of y versus x by year?', options: ['To reveal each firm\'s unobserved fixed effect', 'To reveal cross-sectional heteroskedasticity', 'To visualize whether the x-y relationship drifts over time', 'To test instrument strength directly'] },
-];
-
-const mediumQuestions = [
-    { id: 'M6', type: 'text', content: 'If you re-estimate the same regression but switch from conventional standard errors to firm-clustered standard errors, what changes most directly?', options: ['The estimated coefficient changes substantially', 'Only the standard errors change; the point estimate stays the same', 'Both the point estimate and standard errors change', 'The sign of the coefficient typically flips'] },
-    { id: 'M7', type: 'text', content: "If you incorrectly rely on conventional 'independent and identically distributed' standard errors when errors are serially correlated within firms, your confidence intervals will most likely be:", options: ['Too wide (overly conservative)', 'Unchanged', 'Too narrow (overly optimistic)', 'Exactly accurate if the sample is large'] },
-    { id: 'M8', type: 'text', content: 'After adding firm-clustered standard errors to a time-dummy model, what will you most clearly notice?', options: ['The standard errors and confidence intervals of estimates shrink', 'The standard errors and confidence intervals of estimates widen', 'The sign of the coefficient changes', 'The sample size drops sharply'] },
-    { id: 'M9', type: 'latex',   content: 'You estimate the following regression model: $y_{it} = \\beta x_{it} + \\sum_{t=2020}^{2023} \\delta_t \\mathbf{1}_{\\text{year}=t} + u_{it}$ where 2019 is the reference year and $y_{it}$ is the log of the outcome. The estimated coefficient is $\\hat{\\delta}_{2021} = -0.06 \\; (SE = 0.02).$ Which interpretation of $\\delta_{2021}$ is correct?', options: [
-    'Holding $x_{it}$ fixed, expected $y$ in 2021 is about 6% lower than in 2019',
-    'Holding $x_{it}$ fixed, expected $y$ in 2021 is about 6% lower than in 2020',
-    'From 2020 to 2021, the outcome fell by 6% on average',
-    'From 2020 to 2023, the outcome fell by 6% on average']},
-    { id: 'M10', type: 'text', content: 'You are analyzing monthly firm-level data for the year 2024 only, where the dependent variable Y is the logarithm of monthly sales and the explanatory variable X is online advertising expenditure as a share of revenue. There are economy-wide shocks—such as seasonality and macroeconomic events—that affect all firms at the same time. Which set of time dummies should you include in your regression to capture these common shocks?', options: ['No dummies', 'Year dummies', 'Month dummies', 'Month + Year dummies'] },
-];
-
-const hardQuestions = [
-    { id: 'H1', type: 'text', content: 'Using the regression table below, determine how many time periods (including base year) are there in the panel.',imageUrl: 'td_images/reg_table.png', options: ['9', '10', '2989', '3000'] },
-    { id: 'H2', type: 'text', content: 'The figure displays y (log productivity) against x (capital intensity), with colors indicating different years. Based only on the figure (y vs x colored by year), what can you conclude about adding year dummies to the regression model of y on x?', imageUrl: 'td_images/model.png',options: ['Year dummies are clearly required; strong time effects are visible.', 'The plot alone doesn’t show clear time effects. You can’t conclude year dummies are needed without a test.', 'Year dummies would change the slope but not the intercept.', 'Year dummies cannot be included because they are collinear with the intercept in multi-year data.'] },
-    { id: 'H3', type: 'text', content: 'You have a balanced panel of 300 firms over 8 years. You run a regression with an intercept, a single regressor $x_{it}$, and year dummies. How many residual degrees of freedom does this regression have? <br><em>Hint: what is the number of observations?</em>', options: ['8', '9', '2391', '2392'] },
-    { id: 'H4', type: 'text', content: 'You have a balanced panel of 300 firms over 8 years. You run a regression with a single regressor $x_{it}$, and year dummies. What are the degrees of freedom for the F-test of the joint hypothesis that all year dummies equal zero? <br><em>Hint: what is the number of observations?</em>', options: ['(7, 2391)', '(8, 2391)', '(7, 2392)', '(8, 2392)'] },
-    { id: 'H5', type: 'latex', content: 'You estimate the model: $y_{it} = \\beta x_{it} + \\sum_{t=2020}^{2023} \\delta_t \\mathbf{1}_{\\text{year}=t} + u_{it}$ with 2019 as the reference year. The estimates are $\\hat{\\delta}_{2020} = 0.08$ and $\\hat{\\delta}_{2021} = -0.04$. If you switch the baseline to 2021, what is the coefficient on 2020 in the re-baselined model?', options: ['0.12', '0.08', '−0.04', '−0.08'] },
-];
-
-let preQuestions = [];
-let postQuestions = [];
-
-const surveyQuestions = [
-    { id: 'S1', text: 'survey-1', options: ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly Disagree'] },
-    { id: 'S2', text: 'survey-2', options: ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly Disagree'] },
-    { id: 'S3', text: 'survey-3', options: ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly Disagree'] },
-    { id: 'S4', text: 'survey-4', options: ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly Disagree'] },
-    { id: 'S5', text: 'survey-5', options: ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly Disagree'] },
-];
+// --- REMOVED: All question arrays are now loaded dynamically ---
 
 function generateQuizzes() {
     const shuffle = (arr) => arr.sort(() => 0.5 - Math.random());
@@ -480,14 +451,12 @@ function generateQuizzes() {
         return { selected, remaining };
     };
 
-    // Pre-test: Select 1 from each bank (total 3 questions)
     const easy = selectFromBank(easyQuestions, 1);
     const medium = selectFromBank(mediumQuestions, 1);
     const hard = selectFromBank(hardQuestions, 1);
 
     preQuestions = shuffle([...easy.selected, ...medium.selected, ...hard.selected]);
 
-    // Post-test: From the *remaining* questions, select 2 from each bank (total 6 questions)
     const postEasy = selectFromBank(easy.remaining, 2).selected;
     const postMedium = selectFromBank(medium.remaining, 2).selected;
     const postHard = selectFromBank(hard.remaining, 2).selected;
@@ -506,7 +475,6 @@ function renderLatexIn(container) {
       ]
     });
   } else {
-    // Retry after delay if KaTeX not yet loaded
     setTimeout(() => renderLatexIn(container), 200);
   }
 }
@@ -520,7 +488,7 @@ function renderQuiz(containerId, items) {
     const wrap = document.createElement('div');
     wrap.className = 'quiz-item';
 
-    let questionHTML = `<div><strong>Question.</strong> ${q.content}</div>`;
+    let questionHTML = `<div><strong>Question.</strong> ${q.content || q.text}</div>`;
     if (q.imageUrl) {
       questionHTML += `<img src="${q.imageUrl}" alt="Question image">`;
     }
@@ -530,7 +498,7 @@ function renderQuiz(containerId, items) {
 
     q.options.forEach((opt, i) => {
       const id = `${name}-${i}`;
-      const labelLetter = letters[i] || String.fromCharCode(65 + i); // A, B, C, D...
+      const labelLetter = letters[i] || String.fromCharCode(65 + i);
       const row = document.createElement('div');
       row.innerHTML = `
         <label>
@@ -539,7 +507,6 @@ function renderQuiz(containerId, items) {
         </label>
       `;
       row.querySelector('input').addEventListener('change', () => {
-        // --- MODIFIED: Added 'letter' to the payload ---
         logEvent('question-select', {
             questionId: q.id,
             answer: opt,
@@ -555,6 +522,7 @@ function renderQuiz(containerId, items) {
   renderLatexIn(box);
 }
 
+// --- Video and other functions remain unchanged... ---
 
 function pauseVideoIfPlaying(reason = 'nav-away') {
 	if (!video || video.paused) return;
@@ -975,7 +943,32 @@ function updateIntervalsDisplay() {
 }
 
 /*** === INIT === ***/
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async () => {
+    // --- NEW: This whole block is new. It fetches and decodes the questions. ---
+    try {
+        const response = await fetch('data.txt');
+        if (!response.ok) throw new Error('Network response was not ok.');
+        const encodedData = await response.text();
+        
+        const decodedJsonString = atob(encodedData);
+        const data = JSON.parse(decodedJsonString);
+        
+        easyQuestions = data.easyQuestions;
+        mediumQuestions = data.mediumQuestions;
+        hardQuestions = data.hardQuestions;
+        surveyQuestions = data.surveyQuestions;
+
+        generateQuizzes();
+        renderQuiz('pre-quiz', preQuestions);
+        renderQuiz('post-quiz', postQuestions);
+        renderQuiz('survey-quiz', surveyQuestions);
+
+    } catch (error) {
+        console.error('Fatal Error: Could not load or parse questions.', error);
+        document.body.innerHTML = '<h1>Error: Could not load the activity. Please contact the administrator.</h1>';
+        return; // Stop execution if questions fail to load
+    }
+
     const videoElement = document.getElementById('lecture');
     videoElement.addEventListener('click', () => {
       if (videoElement.paused || videoElement.ended) {
@@ -985,10 +978,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    generateQuizzes();
-    renderQuiz('pre-quiz', preQuestions);
-    renderQuiz('post-quiz', postQuestions);
-    renderQuiz('survey-quiz', surveyQuestions);
     enterPage('intro');
 });
 
