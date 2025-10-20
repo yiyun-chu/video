@@ -4,16 +4,23 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Video</title>
-<!-- NEW: Added for LaTeX rendering (KaTeX) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" integrity="sha384-KiWOvVjnN8qwZuNufCGxrGMkhEZZEnHNJRCvGYedgJOFwhKTwVSpCafPNEUUunxe" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" integrity="sha384-hIoBPJpTUs74ddyc4bFZSM1gAUAANpzuJur4PkqrAxNdPAoQepY/mc6zmpxh5Myo" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURPl3deQkItJpOpBlJdoXagzaWRDCvV+jvOdUOPzzZke1kdMBYdpJC" crossorigin="anonymous"
-    onload="renderMathInElement(document.body);"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ]
+        });">
+</script>
 
 <style>
 :root { --w: 1600px; --gap: 18px; }
 body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#fafafa; color:#111; }
-/* --- MODIFIED ---: Removed fixed margin-left. It will be handled by JavaScript. */
 .wrap { max-width: var(--w); margin: 40px auto; padding: 0 16px; }
 .card { background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.06); padding:28px; }
 h1,h2 { margin:0 0 12px; }
@@ -142,7 +149,7 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 </div>
 
 <div id="screen-video-1" class="card hidden">
-    <h2>Video Part 1: Introduction</h2>
+    <h2>Video Part 1</h2>
     <p class="muted">You can fast-forward/rewind. We record interactions (play, pause, jumps).</p>
     <div id="video-container-1"></div>
     <div id="prompt-container-1"></div>
@@ -152,7 +159,7 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 </div>
 
 <div id="screen-video-2" class="card hidden">
-    <h2>Video Part 2: Why Matters?</h2>
+    <h2>Video Part 2</h2>
     <p class="muted">You can fast-forward/rewind. We record interactions (play, pause, jumps).</p>
     <div id="video-container-2"></div>
     <div id="prompt-container-2"></div>
@@ -162,7 +169,7 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 </div>
 
 <div id="screen-video-3" class="card hidden">
-    <h2>Video Part 3: Core Concepts</h2>
+    <h2>Video Part 3</h2>
     <p class="muted">You can fast-forward/rewind. We record interactions (play, pause, jumps).</p>
     <div id="video-container-3"></div>
     <div id="prompt-container-3"></div>
@@ -172,7 +179,7 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 </div>
 
 <div id="screen-video-4" class="card hidden">
-    <h2>Video Part 4: Conclusion</h2>
+    <h2>Video Part 4</h2>
     <p class="muted">You can fast-forward/rewind. We record interactions (play, pause, jumps).</p>
     <div id="video-container-4"></div>
     <div id="prompt-container-4"></div>
@@ -532,7 +539,12 @@ function renderQuiz(containerId, items) {
         </label>
       `;
       row.querySelector('input').addEventListener('change', () => {
-        logEvent('question-select', { questionId: q.id, answer: opt });
+        // --- MODIFIED: Added 'letter' to the payload ---
+        logEvent('question-select', {
+            questionId: q.id,
+            answer: opt,
+            letter: labelLetter
+        });
       });
       wrap.appendChild(row);
     });
@@ -637,9 +649,6 @@ function setupVideoLogging() {
     if (Math.abs(to - from) >= JUMP_THRESHOLD) {
       logVideoEvent('jump', null, { from, to });
       
-      // --- MODIFIED ---
-      // Added a check for "!isReturningFromAlt" to prevent the prompt from
-      // showing on the programmatic seek when returning from an alt video.
       if (!isAltVideo && treatmentGroup === 1 && !isReturningFromAlt) {
         const part = getCurrentPart();
         if (part) {
@@ -824,7 +833,6 @@ document.getElementById('to-finish').addEventListener('click', () => {
     sendBatch();
 });
 
-// --- MODIFIED: `validateQuizAnswers` to use question IDs ---
 function validateQuizAnswers(containerId, items) {
     const missing = [];
     for (const q of items) {
@@ -834,7 +842,6 @@ function validateQuizAnswers(containerId, items) {
     return missing;
 }
 
-// --- MODIFIED: `showValidationError` to use question IDs ---
 function showValidationError(unansweredIds) {
   document.querySelectorAll('.quiz-item').forEach(el => { el.style.boxShadow = ''; });
   unansweredIds.forEach(id => {
@@ -924,8 +931,6 @@ function showAlternativeVideo(returnTime, part) {
         logEvent('alt-video-return', { part: part.partNumber, returnTime: returnTime });
         restoreOriginalUI();
         
-        // --- MODIFIED ---
-        // Set the flag to true before changing the video source.
         isReturningFromAlt = true;
         
         video.src = part.mainSrc;
@@ -973,12 +978,9 @@ function updateIntervalsDisplay() {
 document.addEventListener('DOMContentLoaded', function() {
     const videoElement = document.getElementById('lecture');
     videoElement.addEventListener('click', () => {
-      // Check if the video is currently paused or has ended
       if (videoElement.paused || videoElement.ended) {
-        // If it is, play the video
         videoElement.play();
       } else {
-        // If it's already playing, pause the video
         videoElement.pause();
       }
     });
