@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-t" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Video</title>
 
@@ -246,14 +246,16 @@ let batchTimer = null;
 let isAltVideo = false;
 let isExitingForPrompt = false;
 let isReturningFromAlt = false;
+let acceptedAltPrompt = false; // --- NEW: To track if user ever accepts the alt video prompt
 
 // --- NEW: Question banks will be loaded from the encoded file ---
 let easyQuestions = [];
 let mediumQuestions = [];
 let hardQuestions = [];
-let surveyQuestions = [];
+let allSurveyQuestions = {};
 let preQuestions = [];
 let postQuestions = [];
+let surveyQuestions = [];
 
 
 const BATCH_INTERVAL = 3000;
@@ -783,6 +785,10 @@ document.getElementById('to-survey').addEventListener('click', () => {
         return;
     }
     logEvent('post-quiz-complete');
+    
+    generateSurveyQuestions();
+    renderQuiz('survey-quiz', surveyQuestions);
+
     show('screen-survey');
     enterPage('survey');
 });
@@ -800,6 +806,21 @@ document.getElementById('to-finish').addEventListener('click', () => {
     clearTimeout(batchTimer);
     sendBatch();
 });
+
+function generateSurveyQuestions() {
+    if (treatmentGroup === 0) {
+        surveyQuestions = allSurveyQuestions.treatment_0;
+    } else if (treatmentGroup === 1) {
+        if (acceptedAltPrompt) {
+            surveyQuestions = allSurveyQuestions.treatment_1_with_replay;
+        } else {
+            surveyQuestions = allSurveyQuestions.treatment_1_no_replay;
+        }
+    } else {
+        // Fallback to a default set if something goes wrong
+        surveyQuestions = allSurveyQuestions.treatment_0;
+    }
+}
 
 function validateQuizAnswers(containerId, items) {
     const missing = [];
@@ -848,6 +869,7 @@ function showPromptUI(returnTime, part) {
   container.appendChild(box);
 
   document.getElementById('alt-yes').onclick = () => {
+    acceptedAltPrompt = true; // --- NEW: Set the flag to true ---
     logEvent('alt-video-start', { part: part.partNumber });
     pauseVideoIfPlaying('alt-video-accepted');
     box.remove();
@@ -944,7 +966,6 @@ function updateIntervalsDisplay() {
 
 /*** === INIT === ***/
 document.addEventListener('DOMContentLoaded', async () => {
-    // --- NEW: This whole block is new. It fetches and decodes the questions. ---
     try {
         const response = await fetch('data.txt');
         if (!response.ok) throw new Error('Network response was not ok.');
@@ -956,17 +977,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         easyQuestions = data.easyQuestions;
         mediumQuestions = data.mediumQuestions;
         hardQuestions = data.hardQuestions;
-        surveyQuestions = data.surveyQuestions;
+        allSurveyQuestions = data.surveyQuestions;
 
         generateQuizzes();
         renderQuiz('pre-quiz', preQuestions);
         renderQuiz('post-quiz', postQuestions);
-        renderQuiz('survey-quiz', surveyQuestions);
 
     } catch (error) {
         console.error('Fatal Error: Could not load or parse questions.', error);
         document.body.innerHTML = '<h1>Error: Could not load the activity. Please contact the administrator.</h1>';
-        return; // Stop execution if questions fail to load
+        return;
     }
 
     const videoElement = document.getElementById('lecture');
