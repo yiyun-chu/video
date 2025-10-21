@@ -231,7 +231,7 @@ Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt<
 
 /*** === CONFIG === ***/
 // const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbxNZH8ojntqLhX-KPN8DDatSGFVE_C4w_ELAvAeAzxBvcrlN09CB-I8vub_JWCjGCcKEw/exec'; // (replay + attempt)
-const LOGGER_URL = "https://script.google.com/macros/s/AKfycbz96VbBQuyM-H1O5sEV6Ge0e8JKpbMCr-PUn8uJ3je7LZWihJ5o1CDPBUq-OECMaxwY/exec"; // (qbank + replay + attempt)
+const LOGGER_URL = "https://script.google.com/macros/s/AKfycbwUk7Wm5BoQFmHQuWfoQQti3kTPVc73GAmaRk4iAtyn1__APLEs3kv-tL7Op-w-39gl/exec"; // (qbank + replay + attempt)
 const MAX_VIDEO_MINUTES = 20;
 
 /*** === STATE & UTIL === ***/
@@ -246,9 +246,7 @@ let batchTimer = null;
 let isAltVideo = false;
 let isExitingForPrompt = false;
 let isReturningFromAlt = false;
-let acceptedAltPrompt = false; // --- NEW: To track if user ever accepts the alt video prompt
-
-// --- NEW: Question banks will be loaded from the encoded file ---
+let acceptedAltPrompt = false; 
 let easyQuestions = [];
 let mediumQuestions = [];
 let hardQuestions = [];
