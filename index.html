@@ -290,6 +290,7 @@ let allSurveyQuestions = {};
 let preQuestions = [];
 let postQuestions = [];
 let surveyQuestions = [];
+let finalSurveyKey = 'treatment_0'; // Default key for the survey bank
 
 
 const BATCH_INTERVAL = 3000;
@@ -308,7 +309,7 @@ logContainer.scrollTop = logContainer.scrollHeight;
 const parts = [
   { partNumber: 1, topic: "Introduction",
     mainSrc: "https://www.dropbox.com/scl/fi/s3gym38ipz40u6ioaa3wt/td_1.mp4?rlkey=x9cczab12zgkd0tu5wf032rs9&st=hm9q8lvt&raw=1",
-    altSrc: "https://www.dropbox.com/scl/fi/0ryzdzd2i5f79vta2nwct/TD_part_1.mp4?rlkey=5c1e522tysqoheyi6he05b84q&st=tm38sjlk&raw=1"
+    altSrc: "https://www.dropbox.com/scl/fi/0ryzdqz2i5f79vta2nwct/TD_part_1.mp4?rlkey=5c1e522tysqoheyi6he05b84q&st=s3iwp6cu&raw=1"
   },
   { partNumber: 2, topic: "Technical Foundations",
     mainSrc: "https://www.dropbox.com/scl/fi/eo17uw5t035g1y4zdp0rd/td_2.mp4?rlkey=okuwre1fzgs3dzj03azwnmexm&st=0tbbianc&raw=1",
@@ -949,6 +950,19 @@ document.getElementById('prompt-yes').addEventListener('click', () => {
     clearTimeout(batchTimer);
     sendBatch(); // Send the current log queue
     
+    // --- FIX: Determine the final survey key based on A1 state before starting A2 ---
+    // This value will be used later when the user completes Attempt 2 and goes to the survey
+    if (treatmentGroup === 1) { // A1 was in Treatment 1 (Replay)
+        if (acceptedAltPrompt) {
+            finalSurveyKey = 'treatment_1_with_replay';
+        } else {
+            finalSurveyKey = 'treatment_1_no_replay';
+        }
+    } else { // treatmentGroup === 0 (Control)
+        finalSurveyKey = 'treatment_0';
+    }
+    // ------------------------------------------------------------------------------
+    
     // 2. Prepare for the second attempt
     // New session ID for the new attempt's logs
     sessionId = crypto.randomUUID(); 
@@ -958,8 +972,13 @@ document.getElementById('prompt-yes').addEventListener('click', () => {
     attemptIndex = 2; // Increment client-side attempt index
     treatmentGroup = 1 - initialTreatmentGroup; // Switch treatment
     
-    // Reset alt video flag
+    // Reset alt video flag for the *new* attempt (A2)
     acceptedAltPrompt = false; 
+    
+    // --- FIX 1: Explicitly reset the title for a clean start on A2 ---
+    const part1Title = document.getElementById('screen-video-1').querySelector('h2');
+    if (part1Title) part1Title.textContent = 'Video Part 1';
+    // ----------------------------------------------------------------
     
     // Re-generate quizzes for a fresh set of questions (especially for post-quiz)
     generateQuizzes(); 
@@ -978,6 +997,16 @@ document.getElementById('prompt-yes').addEventListener('click', () => {
 document.getElementById('prompt-no').addEventListener('click', () => {
     logEvent('retake-declined', { attempt: 1, finalScore: attempt1Score });
     
+    // --- FIX: Determine the final survey key based on A1 state ---
+    if (treatmentGroup === 1) { // A1 was in Treatment 1
+        if (acceptedAltPrompt) {
+            finalSurveyKey = 'treatment_1_with_replay';
+        } else {
+            finalSurveyKey = 'treatment_1_no_replay';
+        }
+    } else { // treatmentGroup === 0
+        finalSurveyKey = 'treatment_0';
+    }  
     // Go to Survey
     generateSurveyQuestions();
     renderQuiz('survey-quiz', surveyQuestions);
@@ -1017,19 +1046,29 @@ document.getElementById('to-finish-from-survey').addEventListener('click', () =>
 // --- END MODIFIED ---
 
 function generateSurveyQuestions() {
-    if (treatmentGroup === 0) {
-        surveyQuestions = allSurveyQuestions.treatment_0;
-    } else if (treatmentGroup === 1) {
-        if (acceptedAltPrompt) {
-            surveyQuestions = allSurveyQuestions.treatment_1_with_replay;
-        } else {
-            surveyQuestions = allSurveyQuestions.treatment_1_no_replay;
-        }
-    } else {
-        // Fallback to a default set if something goes wrong
+    // Use the determined key, which must be set when A1 or A2 finishes
+    surveyQuestions = allSurveyQuestions[finalSurveyKey];
+    if (!surveyQuestions) {
+        // Fallback in case of error
+        console.error(`Invalid finalSurveyKey: ${finalSurveyKey}. Falling back to treatment_0.`);
         surveyQuestions = allSurveyQuestions.treatment_0;
     }
 }
+
+// function generateSurveyQuestions() {
+//     if (treatmentGroup === 0) {
+//         surveyQuestions = allSurveyQuestions.treatment_0;
+//     } else if (treatmentGroup === 1) {
+//         if (acceptedAltPrompt) {
+//             surveyQuestions = allSurveyQuestions.treatment_1_with_replay;
+//         } else {
+//             surveyQuestions = allSurveyQuestions.treatment_1_no_replay;
+//         }
+//     } else {
+//         // Fallback to a default set if something goes wrong
+//         surveyQuestions = allSurveyQuestions.treatment_0;
+//     }
+// }
 
 function validateQuizAnswers(containerId, items) {
     const missing = [];
