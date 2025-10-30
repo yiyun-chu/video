@@ -138,8 +138,7 @@ z-index: 1000;
 </div>
 <div id="screen-pre" class="card hidden">
 <h2>Pre-quiz</h2>
-<p class="muted">Answer a few questions before the video.</p>
-<!-- NEW TEXT ADDED HERE -->
+<!-- <p class="muted">Answer a few questions before the video.</p> -->
 <p class="muted" style="font-style: italic;">The pre-quiz questions will not be graded. We want to gauge your familiarity with the topics and give you a glimpse of what to expect in the post-quiz questions.</p>
 <div id="pre-quiz"></div>
 <div class="btnrow">
@@ -149,7 +148,6 @@ z-index: 1000;
 
 <div id="screen-video-1" class="card hidden">
     <h2>Video Part 1</h2>
-    <!-- UPDATED muted text -->
     <p class="muted">Please try your best to learn as much as you can from the video. You can fast-forward/rewind at any time. We record all interactions (play, pause, jumps, etc.).</p>
     <div id="video-container-1"></div>
     <div id="prompt-container-1"></div>
@@ -160,7 +158,6 @@ z-index: 1000;
 
 <div id="screen-video-2" class="card hidden">
     <h2>Video Part 2</h2>
-    <!-- UPDATED muted text -->
     <p class="muted">Please try your best to learn as much as you can from the video. You can fast-forward/rewind at any time. We record all interactions (play, pause, jumps, etc.).</p>
     <div id="video-container-2"></div>
     <div id="prompt-container-2"></div>
@@ -171,7 +168,6 @@ z-index: 1000;
 
 <div id="screen-video-3" class="card hidden">
     <h2>Video Part 3</h2>
-    <!-- UPDATED muted text -->
     <p class="muted">Please try your best to learn as much as you can from the video. You can fast-forward/rewind at any time. We record all interactions (play, pause, jumps, etc.).</p>
     <div id="video-container-3"></div>
     <div id="prompt-container-3"></div>
@@ -182,7 +178,6 @@ z-index: 1000;
 
 <div id="screen-video-4" class="card hidden">
     <h2>Video Part 4</h2>
-    <!-- UPDATED muted text -->
     <p class="muted">Please try your best to learn as much as you can from the video. You can fast-forward/rewind at any time. We record all interactions (play, pause, jumps, etc.).</p>
     <div id="video-container-4"></div>
     <div id="prompt-container-4"></div>
@@ -197,7 +192,7 @@ z-index: 1000;
 
 <div id="screen-post" class="card hidden">
 <h2>Post-quiz</h2>
-<p class="muted">Questions to test yourself. Answers and interaction logs are recorded.</p>
+<!-- <p class="muted">Questions to test yourself. Answers and interaction logs are recorded.</p> -->
 <div id="post-quiz"></div>
 <div class="btnrow">
 
@@ -214,7 +209,6 @@ z-index: 1000;
 </div>
 </div>
 
-<!-- NEW/MODIFIED SCREEN FOR GRADE PROMPT/POST-ATTEMPT MESSAGE -->
 <div id="screen-grade-prompt" class="card hidden">
     <div id="attempt-status-1">
         <h2>Attempt 1 Complete</h2>
@@ -231,10 +225,9 @@ z-index: 1000;
     </div>
     <div id="attempt-status-2" class="hidden">
         <h2>Attempt 2 Complete</h2>
-        <!-- CORRECTED HTML: Uses the same format as A1, just with Y/total-q-2 -->
         <p>Your grade in this second quiz is <strong id="grade-display-y" style="color:#1f6feb;">Y</strong> points (out of <span id="total-q-2"></span>).</p>
         <p>Thank you for completing both attempts. Your final grade will be calculated using the formula $\max(\mathbf{X}, \mathbf{(\mathbf{X}+\mathbf{Y})/2})$ where $\mathbf{X}$ and $\mathbf{Y}$ are the scores from your two attempts.</p>
-        <p class="muted" style="margin-top: 15px;">Please continue to the final survey.</p>
+        <p class="muted" style="margin-top: 15px;">Note: For example, if you score 5 in your first attempt, 3 in your second, your final score = max(5, (5+3)/2) = 5. If you score 3 in your first attempt, 5 in your second, your final score = max(3, (5+3)/2) = 4</p>
         <div class="btnrow">
             <button id="to-finish-final">→ Continue to Final Survey</button>
         </div>
@@ -291,7 +284,7 @@ let preQuestions = [];
 let postQuestions = [];
 let surveyQuestions = [];
 let finalSurveyKey = 'treatment_0'; // Default key for the survey bank
-
+let hasEverWatchedAltVideo = false;
 
 const BATCH_INTERVAL = 3000;
 const MAX_QUEUE_SIZE = 20;
@@ -487,8 +480,6 @@ sendBatch(true);
 });
 
 /*** === QUIZZES === ***/
-// --- REMOVED: All question arrays are now loaded dynamically ---
-
 function generateQuizzes() {
     const shuffle = (arr) => arr.sort(() => 0.5 - Math.random());
 
@@ -600,8 +591,6 @@ function calculateScore(items) {
     }
     return { correct, total };
 }
-
-// --- Video and other functions remain unchanged... ---
 
 function pauseVideoIfPlaying(reason = 'nav-away') {
 	if (!video || video.paused) return;
@@ -849,7 +838,6 @@ async function verifyAndSetState() {
         renderLatexIn(document.getElementById('screen-pre')); 
         // Clear old answers if it's a retake
         clearAllQuizAnswers();
-        // --- End Core logic ---
       }
     }, 500);
   } catch (err) {
@@ -891,7 +879,6 @@ document.getElementById('to-post').addEventListener('click', () => {
   enterPage('post-quiz');
 });
 
-// MODIFIED HANDLER: Post-Quiz button (to-survey) now goes directly to Grade Prompt
 document.getElementById('to-survey').addEventListener('click', () => {
     const unanswered = validateQuizAnswers('post-quiz', postQuestions);
     if (unanswered.length > 0) {
@@ -904,7 +891,6 @@ document.getElementById('to-survey').addEventListener('click', () => {
     // --- Score Calculation ---
     const { correct, total } = calculateScore(postQuestions);
     postQuizScore = correct; // This is the score for the current attempt (X for A1, Y for A2)
-    // --- End Score Calculation ---
     
     if (attemptIndex === 1) {
         attempt1Score = postQuizScore; // Save score X
@@ -933,9 +919,6 @@ document.getElementById('to-survey').addEventListener('click', () => {
     renderLatexIn(document.getElementById('screen-grade-prompt')); 
 });
 
-// HANDLER REMOVED: After Survey for Attempt 1 (now done by 'to-survey' above)
-// document.getElementById('to-grade-prompt-from-survey').addEventListener('click', ...)
-
 // --- Grade Prompt Handlers ---
 document.getElementById('prompt-yes').addEventListener('click', () => {
     logEvent('retake-accepted', { 
@@ -945,45 +928,26 @@ document.getElementById('prompt-yes').addEventListener('click', () => {
         nextTreatment: 1 - treatmentGroup
     });
     
-    // Log a checkpoint event instead of a 'finish' event to prevent server attempt increment
     logEvent('attempt-1-checkpoint', { score: attempt1Score });
     clearTimeout(batchTimer);
     sendBatch(); // Send the current log queue
-    
-    // --- FIX: Determine the final survey key based on A1 state before starting A2 ---
-    // This value will be used later when the user completes Attempt 2 and goes to the survey
-    if (treatmentGroup === 1) { // A1 was in Treatment 1 (Replay)
-        if (acceptedAltPrompt) {
-            finalSurveyKey = 'treatment_1_with_replay';
-        } else {
-            finalSurveyKey = 'treatment_1_no_replay';
-        }
-    } else { // treatmentGroup === 0 (Control)
-        finalSurveyKey = 'treatment_0';
-    }
-    // ------------------------------------------------------------------------------
-    
+        
     // 2. Prepare for the second attempt
-    // New session ID for the new attempt's logs
     sessionId = crypto.randomUUID(); 
     sessionStartTime = Date.now();
     eventCounter = 0;
     
-    attemptIndex = 2; // Increment client-side attempt index
-    treatmentGroup = 1 - initialTreatmentGroup; // Switch treatment
+    attemptIndex = 2;
+    treatmentGroup = 1 - initialTreatmentGroup;
     
-    // Reset alt video flag for the *new* attempt (A2)
     acceptedAltPrompt = false; 
     
-    // --- FIX 1: Explicitly reset the title for a clean start on A2 ---
     const part1Title = document.getElementById('screen-video-1').querySelector('h2');
     if (part1Title) part1Title.textContent = 'Video Part 1';
-    // ----------------------------------------------------------------
     
-    // Re-generate quizzes for a fresh set of questions (especially for post-quiz)
     generateQuizzes(); 
-    renderQuiz('pre-quiz', preQuestions); // Update pre-quiz questions 
-    renderQuiz('post-quiz', postQuestions); // Important: New set of questions
+    renderQuiz('pre-quiz', preQuestions);
+    renderQuiz('post-quiz', postQuestions);
 
     clearAllQuizAnswers();
     
@@ -993,20 +957,23 @@ document.getElementById('prompt-yes').addEventListener('click', () => {
     setupVideoLogging();
 });
 
-// MODIFIED HANDLER: A1 No Retake (prompt-no) now goes to Survey
+function determineFinalSurveyKey() {
+    // ever accepted the prompt to watch an alternative video, regardless of their treatment group.
+    if (hasEverWatchedAltVideo) {
+        // This key must point to your survey with all 8 questions.
+        finalSurveyKey = 'treatment_1_with_replay'; 
+    } else {
+        // This key must point to your survey with only the first 5 questions.
+        finalSurveyKey = 'treatment_0'; 
+    }
+}
+
 document.getElementById('prompt-no').addEventListener('click', () => {
     logEvent('retake-declined', { attempt: 1, finalScore: attempt1Score });
     
-    // --- FIX: Determine the final survey key based on A1 state ---
-    if (treatmentGroup === 1) { // A1 was in Treatment 1
-        if (acceptedAltPrompt) {
-            finalSurveyKey = 'treatment_1_with_replay';
-        } else {
-            finalSurveyKey = 'treatment_1_no_replay';
-        }
-    } else { // treatmentGroup === 0
-        finalSurveyKey = 'treatment_0';
-    }  
+    // This decides which survey to use right at the moment it's needed.
+    determineFinalSurveyKey();
+    
     // Go to Survey
     generateSurveyQuestions();
     renderQuiz('survey-quiz', surveyQuestions);
@@ -1014,11 +981,12 @@ document.getElementById('prompt-no').addEventListener('click', () => {
     enterPage('survey');
 });
 
+
 document.getElementById('to-finish-final').addEventListener('click', () => {
     logEvent('retake-complete', { attempt: 2, scoreY: postQuizScore });
+    determineFinalSurveyKey();
     
-    // Go to Survey. Use the generateSurveyQuestions function to select the correct survey 
-    // based on the state of the *second* attempt (attemptIndex=2, treatmentGroup, acceptedAltPrompt).
+    // Go to Survey. 
     generateSurveyQuestions(); 
 
     renderQuiz('survey-quiz', surveyQuestions);
@@ -1026,7 +994,6 @@ document.getElementById('to-finish-final').addEventListener('click', () => {
     enterPage('survey-final');
 });
 
-// NEW HANDLER: Final Survey Submission (to-finish-from-survey)
 document.getElementById('to-finish-from-survey').addEventListener('click', () => {
     const unanswered = validateQuizAnswers('survey-quiz', surveyQuestions);
     if (unanswered.length > 0) {
@@ -1043,7 +1010,6 @@ document.getElementById('to-finish-from-survey').addEventListener('click', () =>
     clearTimeout(batchTimer);
     sendBatch();
 });
-// --- END MODIFIED ---
 
 function generateSurveyQuestions() {
     // Use the determined key, which must be set when A1 or A2 finishes
@@ -1054,21 +1020,6 @@ function generateSurveyQuestions() {
         surveyQuestions = allSurveyQuestions.treatment_0;
     }
 }
-
-// function generateSurveyQuestions() {
-//     if (treatmentGroup === 0) {
-//         surveyQuestions = allSurveyQuestions.treatment_0;
-//     } else if (treatmentGroup === 1) {
-//         if (acceptedAltPrompt) {
-//             surveyQuestions = allSurveyQuestions.treatment_1_with_replay;
-//         } else {
-//             surveyQuestions = allSurveyQuestions.treatment_1_no_replay;
-//         }
-//     } else {
-//         // Fallback to a default set if something goes wrong
-//         surveyQuestions = allSurveyQuestions.treatment_0;
-//     }
-// }
 
 function validateQuizAnswers(containerId, items) {
     const missing = [];
@@ -1117,7 +1068,8 @@ function showPromptUI(returnTime, part) {
   container.appendChild(box);
 
   document.getElementById('alt-yes').onclick = () => {
-    acceptedAltPrompt = true; // --- NEW: Set the flag to true ---
+    acceptedAltPrompt = true;
+    hasEverWatchedAltVideo = true; 
     logEvent('alt-video-start', { part: part.partNumber });
     pauseVideoIfPlaying('alt-video-accepted');
     box.remove();
