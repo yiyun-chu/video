@@ -254,6 +254,7 @@ z-index: 1000;
 <script>
 
 /*** === CONFIG === ***/
+// app script URL for logging
 const LOGGER_URL = "https://script.google.com/macros/s/AKfycbwwaUBPLxHB5ax2IbZb-qCwYCt9gwMyem1lPoK-iaCWRhxqcWod9VJsZEHfrEPhKHfHZA/exec"; // (qbank + replay + attempt)
 const MAX_VIDEO_MINUTES = 20;
 
@@ -298,7 +299,7 @@ logEntry.textContent = message;
 logContainer.appendChild(logEntry);
 logContainer.scrollTop = logContainer.scrollHeight;
 }
-
+// links for videos
 const parts = [
   { partNumber: 1, topic: "Introduction",
     mainSrc: "https://www.dropbox.com/scl/fi/s3gym38ipz40u6ioaa3wt/td_1.mp4?rlkey=x9cczab12zgkd0tu5wf032rs9&st=hm9q8lvt&raw=1",
