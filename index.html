@@ -251,7 +251,7 @@ z-index: 1000;
 
 /*** === CONFIG === ***/
 // app script URL for logging
-const LOGGER_URL = "https://script.google.com/macros/s/AKfycbwwaUBPLxHB5ax2IbZb-qCwYCt9gwMyem1lPoK-iaCWRhxqcWod9VJsZEHfrEPhKHfHZA/exec"; // (qbank + replay + attempt)
+const LOGGER_URL = "https://script.google.com/macros/s/AKfycbzSa2pAl8Ll1bLndkRP8phOh2AcRsDfTjPCT6I3EkNGGpbTy9m17Q0WX7fxXgDIWQLm/exec"; // (qbank + replay + attempt)
 const MAX_VIDEO_MINUTES = 20;
 
 const MAX_ATTEMPTS = 1; // Maximum allowed attempts
@@ -939,6 +939,11 @@ document.getElementById('prompt-yes').addEventListener('click', () => {
         nextTreatment: 1 - treatmentGroup
     });
     
+    // ======================= START: SIMPLIFIED SCORE LOGGING =======================
+    // Log the score for attempt 1.
+    logEvent('quiz-score', { score: attempt1Score });
+    // ======================== END: SIMPLIFIED SCORE LOGGING ========================
+
     logEvent('attempt-1-checkpoint', { score: attempt1Score });
     clearTimeout(batchTimer);
     sendBatch(); // Send the current log queue
@@ -981,6 +986,11 @@ function determineFinalSurveyKey() {
 
 document.getElementById('prompt-no').addEventListener('click', () => {
     logEvent('retake-declined', { attempt: 1, finalScore: attempt1Score });
+
+    // ======================= START: SIMPLIFIED SCORE LOGGING =======================
+    // Log the score for attempt 1.
+    logEvent('quiz-score', { score: attempt1Score });
+    // ======================== END: SIMPLIFIED SCORE LOGGING ========================
     
     // This decides which survey to use right at the moment it's needed.
     determineFinalSurveyKey();
@@ -994,7 +1004,14 @@ document.getElementById('prompt-no').addEventListener('click', () => {
 
 
 document.getElementById('to-finish-final').addEventListener('click', () => {
-    logEvent('retake-complete', { attempt: 2, scoreY: postQuizScore });
+    const finalGrade = Math.max(attempt1Score, (attempt1Score + postQuizScore) / 2);
+    logEvent('retake-complete', { attempt: 2, scoreY: postQuizScore, finalScore: finalGrade });
+
+    // ======================= START: SIMPLIFIED SCORE LOGGING =======================
+    // Log the score for attempt 2.
+    logEvent('quiz-score', { score: postQuizScore });
+    // ======================== END: SIMPLIFIED SCORE LOGGING ========================
+
     determineFinalSurveyKey();
     
     // Go to Survey. 
