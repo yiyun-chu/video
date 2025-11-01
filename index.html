@@ -896,8 +896,9 @@ document.getElementById('to-survey').addEventListener('click', () => {
         
         // ======================= START: CODE TO ADD =======================
         // This creates the dynamic text and inserts it into the paragraph.
-        const retakeText = `We would like to give you a chance to improve your grade. Do you want to try again? If you do, and you get a grade of $\\mathbf{Y}$ points, we will give you either $\\mathbf{${attempt1Score}}$ or $\\mathbf{(${attempt1Score}+Y)/2}$ points as your final grade, whichever is the highest.`;
+        const retakeText = `We would like to give you a chance to improve your grade. Do you want to try again? If you do, and you get a grade of $\\mathbf{Y}$ points, we will give you either $\\mathbf{\\textcolor{#1f6feb}{${attempt1Score}}}$ or $\\mathbf{(\\textcolor{#1f6feb}{${attempt1Score}}+Y)/2}$ points as your final grade, whichever is the highest.`;
         document.getElementById('retake-prompt-text').innerHTML = retakeText;
+
         // ======================== END: CODE TO ADD ========================
 
         // Show prompt box for A1
