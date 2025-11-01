@@ -107,7 +107,7 @@ z-index: 1000;
 <div class="wrap">
 
 <div id="screen-intro" class="card">
-<h1>Welcome to the course!</h1>
+<h1>Welcome!</h1>
 <p>This session will start with a short pre-quiz, which will not be graded. Please watch the video after this pre-quiz. You will then enter the graded quiz. Once you begin the graded quiz, you will not be able to return to the video. The graded quiz includes six questions covered in the video. Please complete all answers on your own. Using AI tools is not allowed.</p>
 <div class="btnrow">
   <button id="fullscreen-btn">Enter Fullscreen to Continue</button>
@@ -212,7 +212,8 @@ z-index: 1000;
         <p>Your grade in this quiz is <strong id="grade-display-x" style="color:#1f6feb;">X</strong> points out of <span id="total-q-1"></span>.</p>
         <div id="retake-prompt-box">
             <h3>Improve Your Grade?</h3>
-            <p>We would like to give you a chance to improve your grade. Do you want to try again? If you do, and you get a grade of $\mathbf{Y}$ points, we will give you either $\mathbf{X}$ or $\mathbf{(\mathbf{X}+\mathbf{Y})/2}$ points as your final grade, whichever is the highest.</p>
+            <!-- CHANGED: Gave the descriptive paragraph an ID so we can dynamically update its content with the actual score -->
+            <p id="retake-prompt-text">We would like to give you a chance to improve your grade. Do you want to try again? If you do, and you get a grade of $\mathbf{Y}$ points, we will give you either $\mathbf{X}$ or $\mathbf{(\mathbf{X}+\mathbf{Y})/2}$ points as your final grade, whichever is the highest.</p>
             <div class="btnrow">
             <button class="secondary" id="prompt-no">No, finish session</button>
             <button id="prompt-yes">Yes, try again (Start new session)</button>
@@ -884,15 +885,21 @@ document.getElementById('to-survey').addEventListener('click', () => {
     
     // --- Score Calculation ---
     const { correct, total } = calculateScore(postQuestions);
-    postQuizScore = correct; // This is the score for the current attempt (X for A1, Y for A2)
+    postQuizScore = correct; 
     
     if (attemptIndex === 1) {
-        attempt1Score = postQuizScore; // Save score X
+        attempt1Score = postQuizScore;
         
         // Set the score display for Attempt 1
         document.getElementById('grade-display-x').textContent = attempt1Score;
         document.getElementById('total-q-1').textContent = total;
         
+        // ======================= START: CODE TO ADD =======================
+        // This creates the dynamic text and inserts it into the paragraph.
+        const retakeText = `We would like to give you a chance to improve your grade. Do you want to try again? If you do, and you get a grade of $\\mathbf{Y}$ points, we will give you either $\\mathbf{${attempt1Score}}$ or $\\mathbf{(${attempt1Score}+Y)/2}$ points as your final grade, whichever is the highest.`;
+        document.getElementById('retake-prompt-text').innerHTML = retakeText;
+        // ======================== END: CODE TO ADD ========================
+
         // Show prompt box for A1
         document.getElementById('attempt-status-1').classList.remove('hidden');
         document.getElementById('attempt-status-2').classList.add('hidden');
