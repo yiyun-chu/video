@@ -13,7 +13,7 @@
             {left: '$$', right: '$$', display: true},
             {left: '$', right: '$', display: false},
             {left: '\\(', right: '\\)', display: false},
-            {left: '\\[', right: '\\[', display: true}
+            {left: '\\[', right: '\\]', display: true}
           ]
         });">
 </script>
@@ -108,14 +108,11 @@ z-index: 1000;
 
 <div id="screen-intro" class="card">
 <h1>Welcome to the course!</h1>
-<p>The session will start with a short pre-quiz, which will not be graded. Please watch all videos carefully. Once you begin the post-quiz, you will not be able to return to the videos. Your grade will be based on the post-quiz, which consists of six questions drawn from the video content.</p>
-<ul class="list">
-<li>Rule: Please complete all answers on your own. AI tools are not allowed.</li>
-</ul>
+<p>This session will start with a short pre-quiz, which will not be graded. Please watch the video after this pre-quiz. You will then enter the graded quiz. Once you begin the graded quiz, you will not be able to return to the video. The graded quiz includes six questions covered in the video. Please complete all answers on your own. Using AI tools is not allowed.</p>
 <div class="btnrow">
   <button id="fullscreen-btn">Enter Fullscreen to Continue</button>
 </div>
-<p class="muted">⚠️ <strong>You must stay in fullscreen during the session. Exiting fullscreen or navigating away from this window will end the study immediately</strong>. Each student has only <span style="font-weight:700; color:#b91c1c;">one attempt</span>.</p>
+<p class="muted">⚠️ <strong>You must stay in full-screen during this entire session. Exiting full-screen or navigating away from this window will end the video and the quiz immediately</strong>. You have only <span style="font-weight:700; color:#b91c1c;">one attempt</span> at answering this quiz.</p>
 </div>
 <div id="screen-id" class="card hidden">
 <h2>Please input your Andrew ID</h2>
@@ -139,7 +136,7 @@ z-index: 1000;
 <div id="screen-pre" class="card hidden">
 <h2>Pre-quiz</h2>
 <!-- <p class="muted">Answer a few questions before the video.</p> -->
-<p class="muted" style="font-style: italic;">The pre-quiz questions will not be graded. We want to gauge your familiarity with the topics and give you a glimpse of what to expect in the post-quiz questions.</p>
+<p class="muted" style="font-style: italic;">The pre-quiz will not be graded. We would just like to gauge your familiarity with the topics and give you a glimpse of what to expect in the graded quiz.</p>
 <div id="pre-quiz"></div>
 <div class="btnrow">
 <button id="to-video">→ Continue to video</button>
@@ -182,7 +179,7 @@ z-index: 1000;
     <div id="video-container-4"></div>
     <div id="prompt-container-4"></div>
     <div class="btnrow">
-        <button id="to-post">→ Continue to post-quiz</button>
+        <button id="to-post">→ Continue to graded quiz</button>
     </div>
 </div>
 <div id="video-sidebar" class="hidden">
@@ -191,7 +188,7 @@ z-index: 1000;
 </div>
 
 <div id="screen-post" class="card hidden">
-<h2>Post-quiz</h2>
+<h2>Graded quiz</h2>
 <!-- <p class="muted">Questions to test yourself. Answers and interaction logs are recorded.</p> -->
 <div id="post-quiz"></div>
 <div class="btnrow">
@@ -212,11 +209,10 @@ z-index: 1000;
 <div id="screen-grade-prompt" class="card hidden">
     <div id="attempt-status-1">
         <h2>Attempt 1 Complete</h2>
-        <p>Your grade in this quiz is <strong id="grade-display-x" style="color:#1f6feb;">X</strong> points (out of <span id="total-q-1"></span>).</p>
+        <p>Your grade in this quiz is <strong id="grade-display-x" style="color:#1f6feb;">X</strong> points out of <span id="total-q-1"></span>.</p>
         <div id="retake-prompt-box">
             <h3>Improve Your Grade?</h3>
-            <p>We would like to give you a chance to improve your grade. Do you want to try again? If you do, and you get a grade of $\mathbf{Y}$ points in the post-quiz, we will give you either $\mathbf{X}$ or $\mathbf{(\mathbf{X}+\mathbf{Y})/2}$ points as your final grade, whichever is the highest.</p>
-            <p class="muted" style="margin-top: 15px;">Note: Your final grade will be calculated based on your post-quiz score from this attempt ($\mathbf{X}$) and the post-quiz score from your next attempt ($\mathbf{Y}$).</p>
+            <p>We would like to give you a chance to improve your grade. Do you want to try again? If you do, and you get a grade of $\mathbf{Y}$ points, we will give you either $\mathbf{X}$ or $\mathbf{(\mathbf{X}+\mathbf{Y})/2}$ points as your final grade, whichever is the highest.</p>
             <div class="btnrow">
             <button class="secondary" id="prompt-no">No, finish session</button>
             <button id="prompt-yes">Yes, try again (Start new session)</button>
@@ -225,9 +221,8 @@ z-index: 1000;
     </div>
     <div id="attempt-status-2" class="hidden">
         <h2>Attempt 2 Complete</h2>
-        <p>Your grade in this second quiz is <strong id="grade-display-y" style="color:#1f6feb;">Y</strong> points (out of <span id="total-q-2"></span>).</p>
-        <p>Thank you for completing both attempts. Your final grade will be calculated using the formula $\max(\mathbf{X}, \mathbf{(\mathbf{X}+\mathbf{Y})/2})$ where $\mathbf{X}$ and $\mathbf{Y}$ are the scores from your two attempts.</p>
-        <p class="muted" style="margin-top: 15px;">Note: For example, if you score 5 in your first attempt, 3 in your second, your final score = max(5, (5+3)/2) = 5. If you score 3 in your first attempt, 5 in your second, your final score = max(3, (5+3)/2) = 4</p>
+        <p>Your grade in this quiz is <strong id="grade-display-y" style="color:#1f6feb;">Y</strong> points out of <span id="total-q-2"></span>.</p>
+        <p>Thank you for completing both attempts. Your grade in attempt 1 was <strong id="attempt1-score-display" style="color:#1f6feb;">X</strong> points and your grade in attempt 2 is <strong id="attempt2-score" style="color:#1f6feb;">Y</strong> points (both out of <span id="total-q-attempts"></span>), so your final grade is <strong id="final-score" style="color:#1f6feb;">Z</strong> points out of <span id="total-q-final"></span>.</p>
         <div class="btnrow">
             <button id="to-finish-final">→ Continue to Final Survey</button>
         </div>
@@ -315,7 +310,7 @@ const parts = [
   },
   { partNumber: 4, topic: "Key Takeaway",
     mainSrc: "https://www.dropbox.com/scl/fi/68835bk10zciz9nro70d6/td_4.mp4?rlkey=1736y56ht0b1incuxo6g17lz8&st=y9bqqtsv&raw=1",
-altSrc: "https://www.dropbox.com/scl/fi/n0dvapl8tgahkglajr2qg/TD_part_4.mp4?rlkey=skumh5m2a1vo7gf1t7wftv4ww&st=530iy6u6&raw=1"
+    altSrc: "https://www.dropbox.com/scl/fi/n0dvapl8tgahkglajr2qg/TD_part_4.mp4?rlkey=skumh5m2a1vo7gf1t7wftv4ww&st=530iy6u6&raw=1"
   },
 ];
 
@@ -454,8 +449,7 @@ return Number(((Date.now() - sessionStartTime) / 1000).toFixed(2));
 
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        // Include screen-grade-prompt in exceptions
-        if (!['screen-intro', 'screen-id', 'screen-verifying', 'screen-blocked', 'screen-done', 'screen-grade-prompt'].includes(currentScreenId)) { 
+        if (!['screen-intro', 'screen-id', 'screen-verifying', 'screen-blocked', 'screen-done'].includes(currentScreenId)) { 
             logEvent('visibility-hidden-forced-exit');
             pauseVideoIfPlaying('tab-hidden');
             logEvent('post-quiz-complete', { forced: true, reason: 'visibility-hidden' });
@@ -740,8 +734,7 @@ document.addEventListener('fullscreenchange', () => {
       isExitingForPrompt = false;
       return; 
     }
-    // Include screen-grade-prompt in exceptions
-    if (currentScreenId !== 'screen-intro' && currentScreenId !== 'screen-done' && currentScreenId !== 'screen-grade-prompt') {
+    if (!['screen-intro', 'screen-id', 'screen-verifying', 'screen-blocked', 'screen-done'].includes(currentScreenId)) {
       logEvent('fullscreen-forced-exit');
       pauseVideoIfPlaying('fullscreen-exit');
       logEvent('post-quiz-complete', { forced: true });
@@ -897,7 +890,7 @@ document.getElementById('to-survey').addEventListener('click', () => {
         attempt1Score = postQuizScore; // Save score X
         
         // Set the score display for Attempt 1
-        document.getElementById('grade-display-x').textContent = `${attempt1Score}/${total}`;
+        document.getElementById('grade-display-x').textContent = attempt1Score;
         document.getElementById('total-q-1').textContent = total;
         
         // Show prompt box for A1
@@ -906,9 +899,18 @@ document.getElementById('to-survey').addEventListener('click', () => {
         
     } else if (attemptIndex === 2) {
         // Set the score display for Attempt 2
-        document.getElementById('grade-display-y').textContent = `${postQuizScore}/${total}`;
+        document.getElementById('grade-display-y').textContent = postQuizScore;
         document.getElementById('total-q-2').textContent = total;
-        
+
+        const finalGrade = Math.max(attempt1Score, (attempt1Score + postQuizScore) / 2);
+
+        // Populate the detailed final grade summary
+        document.getElementById('attempt1-score-display').textContent = attempt1Score;
+        document.getElementById('attempt2-score').textContent = postQuizScore;
+        document.getElementById('total-q-attempts').textContent = total;
+        document.getElementById('final-score').textContent = finalGrade;
+        document.getElementById('total-q-final').textContent = total;
+
         // Show prompt box for A2
         document.getElementById('attempt-status-1').classList.add('hidden');
         document.getElementById('attempt-status-2').classList.remove('hidden');
